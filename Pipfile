@@ -4,8 +4,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pytest = "*"
+boto3 = "*"
 
 [packages]
+cookiecutter = "*"
 
 [requires]
 python_version = "3.6"
