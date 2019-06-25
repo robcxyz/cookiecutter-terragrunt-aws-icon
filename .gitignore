@@ -1,0 +1,10 @@
+_old/
+
+.idea/
+
+*.tfstate/
+
+.terragrunt-cache/
+.terraform/
+
+account.tfvars
