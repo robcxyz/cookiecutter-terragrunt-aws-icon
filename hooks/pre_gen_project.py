@@ -12,6 +12,7 @@ class TerragruntGenerator(object):
 
     def __init__(self, environment='dev', num_regions=1, debug=False, *args, **kwargs):
         self.debug = debug
+        self.headless = False
         # These values need override to pass tests instead of rendering them
         if self.debug:
             self.environment = environment
@@ -43,11 +44,12 @@ class TerragruntGenerator(object):
         self.use_stack_modules = None
         self.stack_names = []
 
+        self.use_special_modules = None
+
         self.forked_repo = 'n'
         self.already_forked = False
         self.git_user = 'robcxyz'
         self.repo = 'terragrunt-modules-'
-
 
         for d in args:
             for key in d:
@@ -149,26 +151,28 @@ class TerragruntGenerator(object):
         data_dir = os.path.join(os.path.abspath(os.path.curdir), 'data')
         print(type(data_dir))
         self.stack_names = os.listdir(data_dir)
-        # print(data_dir.remove('common.hcl'))
-
 
     def ask_special_modules(self):
-        self.use_special_modules = self.choice_question('', ['y', 'n'])
+        while True:
+            self.use_special_modules = self.choice_question('Would you like to enter eny special modules', ['n', 'n'])
 
+    def ask_all(self):
         for r in range(self.num_regions):
             self.r = r
             self.ask_region()
             self.ask_availability_zones()
             self.ask_common_modules()
+            self.ask_stack_modules()
+            self.ask_special_modules()
 
+    def main(self):
+        if not self.headless:
+            self.ask_all()
 
-    def render(self):
-        self.ask_all()
 
 
 if __name__ == '__main__':
     # tg = TerragruntGenerator(debug=True).choice_question('How many availability zones', ['y', 'n'])
     tg = TerragruntGenerator(num_regions=2, debug=True)
-    tg.ask_stack_modules()
+    tg.main()
     print(tg.stack_names)
-
