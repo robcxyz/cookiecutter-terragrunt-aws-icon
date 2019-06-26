@@ -40,6 +40,9 @@ class TerragruntGenerator(object):
 
         self.common_modules = {}
 
+        self.use_stack_modules = None
+        self.stack_names = []
+
         self.forked_repo = 'n'
         self.already_forked = False
         self.git_user = 'robcxyz'
@@ -143,33 +146,14 @@ class TerragruntGenerator(object):
         self.use_stack_modules = self.choice_question('What kind of stack are you building?\n',
                                                       ['basic-p-rep', 'decoupled-p-rep', 'data-science',
                                                        'data-engineering-hadoop'])
-        if self.use_stack_modules == 'y' and not self.already_forked:
-            self.forked_repo = self.choice_question('Do you have a private fork? \n '
-                                                    '(I\'d fork it if you want to customize it ..)', ['y', 'n'])
-        if self.forked_repo == 'y' and not self.already_forked:
-            self.git_user = self.simple_question('What is your github username / organization?', ['y', 'n'])
-            self.already_forked = True
+        data_dir = os.path.join(os.path.abspath(os.path.curdir), 'data')
+        print(type(data_dir))
+        self.stack_names = os.listdir(data_dir)
+        # print(data_dir.remove('common.hcl'))
 
-        if self.use_common_modules == 'y':
-            common_path = os.path.join('data', 'common.hcl')
-            with open(common_path, 'r') as f:
-                self.common_modules = hcl.load(f)
 
     def ask_special_modules(self):
         self.use_special_modules = self.choice_question('', ['y', 'n'])
-        if self.use_special_modules == 'y' and not self.already_forked:
-            self.forked_repo = self.choice_question('Do you have a private fork? \n '
-                                                    '(I\'d fork it if you want to customize it ..)', ['y', 'n'])
-        if self.forked_repo == 'y' and not self.already_forked:
-            self.git_user = self.simple_question('What is your github username / organization?', ['y', 'n'])
-            self.already_forked = True
-
-        if self.use_common_modules == 'y':
-            common_path = os.path.join('data', 'common.hcl')
-            with open(common_path, 'r') as f:
-                self.common_modules = hcl.load(f)
-
-    def ask_all(self):
 
         for r in range(self.num_regions):
             self.r = r
@@ -184,12 +168,7 @@ class TerragruntGenerator(object):
 
 if __name__ == '__main__':
     # tg = TerragruntGenerator(debug=True).choice_question('How many availability zones', ['y', 'n'])
-    # tg = TerragruntGenerator(num_regions=2, debug=True)
-    # tg.ask_all()
-    # print(tg.stack)
+    tg = TerragruntGenerator(num_regions=2, debug=True)
+    tg.ask_stack_modules()
+    print(tg.stack_names)
 
-    common = os.path.join('data', 'common.hcl')
-    with open(common, 'r') as f:
-        obj = hcl.load(f)
-
-    print(obj)
