@@ -9,6 +9,7 @@ boto3 = "*"
 
 [packages]
 cookiecutter = "*"
+pyhcl = "*"
 
 [requires]
 python_version = "3.6"
