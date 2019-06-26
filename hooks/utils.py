@@ -18,10 +18,11 @@ def get_availability_zones():
 
     return zones
 
-def print_availability_zones():
+
+def write_availability_zones():
     with open('aws_availability_zones.json', 'w') as f:
         json.dump(get_availability_zones(), f)
 
 
 if __name__ == '__main__':
-    print_availability_zones()
+    write_availability_zones()
