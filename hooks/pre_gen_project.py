@@ -159,7 +159,7 @@ class TerragruntGenerator(object):
         if self.use_common_modules == 'y':
             with open(os.path.join(self.stacks_dir, 'common.hcl'), 'r') as f:
                 self.common_modules = hcl.load(f)
-            self.stack[self.r] = StackParser(self.common_modules)
+            self.stack[self.r]['modules'].update(StackParser(self.common_modules).stack['modules'])
 
     def ask_stack_modules(self):
 
@@ -170,7 +170,7 @@ class TerragruntGenerator(object):
             # TODO: Perhaps qualify the options first or allow for alternative input
             with open(os.path.join(self.stacks_dir, str(self.stack_type)+'.hcl')) as f:
                 self.stack_modules = hcl.load(f)
-            self.stack[self.r] = StackParser(self.stack_modules)
+            self.stack[self.r]['modules'].update(StackParser(self.stack_modules).stack['modules'])
 
     def ask_special_modules(self):
 
@@ -194,6 +194,7 @@ class TerragruntGenerator(object):
         for r in range(self.num_regions):
             self.r = r
             self.ask_region()
+            self.stack[self.r] = {'region': self.region, 'modules': {}, 'files': {}}
             self.ask_availability_zones()
             self.ask_common_modules()
             self.ask_stack_modules()
@@ -206,8 +207,9 @@ class TerragruntGenerator(object):
     def main(self):
         if not self.headless:
             self.ask_all()
+        self.make_all()
 
 if __name__ == '__main__':
-    tg = TerragruntGenerator(num_regions=2, debug=True)
+    tg = TerragruntGenerator(num_regions=1, debug=True)
     tg.main()
     print(tg.stack)

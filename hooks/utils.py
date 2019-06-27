@@ -4,6 +4,8 @@ import boto3
 import hcl
 from jinja2 import Template, Environment, FileSystemLoader
 
+from pprint import pprint
+
 
 def get_availability_zones():
     client = boto3.client('ec2')
@@ -44,17 +46,51 @@ class StackParser(object):
         self.hcl_dict = hcl_dict
         self.stack = {}
 
-    def get_files(self):
-        pass
+        self.main()
 
-    def get_modules(self):
-        pass
+    @staticmethod
+    def _validate_format(k, dict):
+        required_keys = ['type']
+        module_keys = ['dependencies', 'vars', 'source']
+        file_keys = ['']
+
+        for key in required_keys:
+            if key not in dict.keys():
+                raise ValueError(f'Need to set \'{key}\' key for \'{k}\' item')
+
+        if dict['type'] == 'module':
+            for key in module_keys:
+                if key not in dict.keys():
+                    raise ValueError(f'Need to set \'{key}\' key for \'{k}\' item')
+        elif dict['type'] == 'file':
+            for key in file_keys:
+                if key not in dict.keys():
+                    raise ValueError(f'Need to set \'{key}\' key for \'{k}\' item')
+        else:
+            raise ValueError(f'Unrecognized type for \'{k}\' item')
 
     def main(self):
-        self.get_files()
-        self.get_modules()
-        return self.stack
+        self.stack = {'modules': {}, 'files': {}}
+        for k, v in self.hcl_dict.items():
+            print(v.keys())
+            self._validate_format(k, v)
+            print(f'processing {k}')
+            if v['type'] == 'module':
+                # self.stack['modules'][k].update(v)
+                self.stack['modules'][k] = v
 
 
 if __name__ == '__main__':
-    pass
+    with open('stacks/common.hcl', 'rb') as fp:
+        out = hcl.loads(fp.read())
+
+    pprint(out.items())
+    # for k, v in out.items():
+    # print(v)
+    pprint(StackParser(out).stack)
+    # inp = out['vpc'].keys()
+    # print(inp)
+    # required_keys = ['type', 'source']
+    # optional_keys = ['dependencies', 'vars']
+    # for k in required_keys:
+    #     if k not in inp

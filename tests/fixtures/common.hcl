@@ -1,6 +1,7 @@
 vpc {
   type = "module"
   source = "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v1.59.0"
+  requires = ""
   dependencies = ""
   vars {
     name = "vpc-dev"
@@ -12,19 +13,18 @@ vpc {
 }
 
 keys {
-  type = "module"
-  source = "github.com/robcxyz/terragrunt-root-modules.git//common/keys"
-  dependencies = [""]
+  source = "github.com/{ git_user }/{ repo }.git//{ module_path }"
+  requires = ""
+  dependencies = ""
   vars {
     name = "keys"
   }
 }
 
 security_groups {
-  type = "module"
-  source = "github.com/robcxyz/terragrunt-root-modules.git//common/keys"
-  //  source = "github.com/{ git_user }/{ repo }.git//{ module_path }"
-  dependencies = [""]
+  source = "github.com/{ git_user }/{ repo }.git//{ module_path }"
+  requires = ""
+  dependencies = ""
   vars {
     name = "security_groups"
   }

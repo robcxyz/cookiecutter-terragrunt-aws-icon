@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
+import hcl
+
 import pytest
 
 from hooks.utils import append_vars_to_tfvars
-
+from hooks.utils import StackParser
 
 def test_render_in_place():
     pass
@@ -13,5 +15,33 @@ def test_append_vars_to_tfvars(tmpdir):
     p = tmpdir.mkdir("sub").join(tfv)
     append_vars_to_tfvars(p, {'stuff': 'things', 'foo': 'bar'})
     assert p.read() == 'stuff = things\nfoo = bar\n'
+
+
+FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures')
+FIXTURES = [
+    (
+        "common.hcl",
+        True,
+    ),
+    (
+        "basic-p-rep.hcl",
+        True,
+    )
+]
+
+@pytest.mark.parametrize("hcl_fname,invalid", FIXTURES)
+def test_stack_parser(hcl_fname, invalid, monkeypatch):
+    with open(os.path.join(FIXTURE_DIR, hcl_fname), 'rb') as fp:
+
+        inp = fp.read()
+        print(inp)
+
+        if not invalid:
+            StackParser(hcl.loads(inp))
+        else:
+            with pytest.raises(ValueError):
+                StackParser(hcl.loads(inp))
+
+
 
 
