@@ -168,7 +168,7 @@ class TerragruntGenerator(object):
             stack_options = ['basic-p-rep', 'decoupled-p-rep', 'data-science', 'data-engineering-hadoop']
             self.stack_type = self.choice_question('What type of stack are you building?\n', stack_options)
             # TODO: Perhaps qualify the options first or allow for alternative input
-            with open(os.path.join(self.stacks_dir, str(self.stack_type)+'.hcl')) as f:
+            with open(os.path.join(self.stacks_dir, str(self.stack_type) + '.hcl')) as f:
                 self.stack_modules = hcl.load(f)
             self.stack[self.r]['modules'].update(StackParser(self.stack_modules).stack['modules'])
 
@@ -179,10 +179,10 @@ class TerragruntGenerator(object):
         if self.use_special_modules == 'y':
             self.special_modules_location = self.choice_question('Where would you like to import special modules from?',
                                                                  ['local', 'github', 'url'])
-    # TODO: This should iterate until the user stops entering information.  This is also pretty dumb as the user
-    # at that point can just copy and paste so not sure what the purpose of this really is
-    # The real value in this tool is just to have a simple cli to get users into the ecosystem
-    # Many users will not even need to have customizations as they'll be working on another layer (ie application)
+            # TODO: This should iterate until the user stops entering information.  This is also pretty dumb as the user
+            # at that point can just copy and paste so not sure what the purpose of this really is
+            # The real value in this tool is just to have a simple cli to get users into the ecosystem
+            # Many users will not even need to have customizations as they'll be working on another layer (ie application)
             if self.special_modules_location == 'local':
                 pass
             if self.special_modules_location == 'github':
@@ -202,12 +202,17 @@ class TerragruntGenerator(object):
 
     def make_all(self):
         for r in range(self.num_regions):
-            pass
+            region_modules = self.stack[r]['modules'].keys()
+            # for m in range(len(region_modules)):
+            for m in region_modules:
+                module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
+                os.makedirs(module_path)
 
     def main(self):
         if not self.headless:
             self.ask_all()
         self.make_all()
+
 
 if __name__ == '__main__':
     tg = TerragruntGenerator(num_regions=1, debug=True)
