@@ -33,13 +33,16 @@ def test_choice_question(monkeypatch, capsys):
 #     See also https://github.com/eisensheng/pytest-catchlog as a possible alternative to capture recursive cli errors
 
 
-def test_get_aws_availability_zones(monkeypatch):
+def test_get_aws_availability_zones(monkeypatch, tmpdir):
+
     monkeypatch.setattr('builtins.input', lambda x: "n")
     tg = TerragruntGenerator(debug=True)
     tg.get_aws_availability_zones()
     assert len(tg.availability_zones['ap-northeast-1']) == 3
 
     # This works but takes 15 seconds...
+    # TODO: Put in tmp dir
+    # p = tmpdir.mkdir('sub').join('aws_availability_zones.json')
     # monkeypatch.setattr('builtins.input', lambda x: "y")
     # tg = TerragruntGenerator(debug=True)
     # tg.get_aws_availability_zones()
@@ -52,10 +55,10 @@ def test_get_aws_availability_zones(monkeypatch):
 #     tg.ask_availability_zones()
 #     assert tg.num_azs == str(3)
 
-# monkeypatch.setattr('builtins.input', lambda x: "max")
-# tg = TerragruntGenerator(debug=True, )
-# tg.ask_availability_zones()
-# assert tg.num_azs == str(3)
+    # monkeypatch.setattr('builtins.input', lambda x: "max")
+    # tg = TerragruntGenerator(debug=True, )
+    # tg.ask_availability_zones()
+    # assert tg.num_azs == str(3)
 
 # TODO: Test for raising "Option not available"
 
@@ -94,13 +97,13 @@ def test_ask_availability_zones(monkeypatch):
 
 def test_ask_common_modules(monkeypatch):
     # Single region
-    inputs = ['', 'max']
+    inputs = ['', '']
     input_generator = (i for i in inputs)
     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
     tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1')
     tg.ask_common_modules()
 
-    assert tg.num_azs == 3
+    assert tg.stack == 3
 
 
 def test_ask_all(monkeypatch):

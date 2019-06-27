@@ -2,7 +2,7 @@ import os
 import json
 import hcl
 
-from utils import write_availability_zones, get_availability_zones
+from utils import write_availability_zones, StackParser
 
 REGIONS = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ca-central-1',
            'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 'eu-west-3']
@@ -10,9 +10,11 @@ REGIONS = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', '
 
 class TerragruntGenerator(object):
 
-    def __init__(self, environment='dev', num_regions=1, debug=False, *args, **kwargs):
+    def __init__(self, environment='dev', num_regions=1, debug=False, headless=False, *args, **kwargs):
         self.debug = debug
-        self.headless = False
+        self.headless = headless
+        self.stacks_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'hooks', 'stacks')
+
         # These values need override to pass tests instead of rendering them
         if self.debug:
             self.environment = environment
@@ -43,8 +45,11 @@ class TerragruntGenerator(object):
 
         self.use_stack_modules = None
         self.stack_names = []
+        self.stack_type = None
+        self.stack_modules = {}
 
         self.use_special_modules = None
+        self.special_modules_location = None
 
         self.forked_repo = 'n'
         self.already_forked = False
@@ -69,7 +74,6 @@ class TerragruntGenerator(object):
         if not user_entry and default is not None:
             user_entry = default
         if not user_entry and default is None:
-            # simple_question()
             raise ValueError
         return user_entry
 
@@ -80,16 +84,19 @@ class TerragruntGenerator(object):
             raise ValueError("Default is not a list")
         choices = frozenset(defaults)
         input_question = f'{question}-\n[{defaults}]:'
+        tries = 0
         try:
             while True:
-                # choice = raw_input().lower()
                 user_entry = input(input_question)
                 if user_entry in choices:
                     break
                 elif user_entry == "":
                     break
+                elif tries > 5:
+                    raise ValueError('Too many attempts - exiting')
                 else:
                     print("Option not available")
+                    tries += 1
         except SyntaxError:
             user_entry = None
         if not user_entry:
@@ -99,7 +106,6 @@ class TerragruntGenerator(object):
     def ask_region(self):
         self.get_aws_availability_zones()
         self.possible_regions = self.availability_zones.keys()
-        # for r in range(self.num_regions):
         region = self.choice_question(f'Enter region number {self.r + 1} to deploy into? \n',
                                       list(self.possible_regions))
         if region in self.regions:
@@ -115,7 +121,7 @@ class TerragruntGenerator(object):
                 ['n', 'y'])
             if self.rebuild_availability_zones == 'y':
                 write_availability_zones()
-            with open('aws_availability_zones.json', 'r') as f:
+            with open(os.path.join(self.stacks_dir, '..', 'aws_availability_zones.json'), 'r') as f:
                 self.availability_zones = json.load(f)
             self.got_az_list = True
 
@@ -130,31 +136,59 @@ class TerragruntGenerator(object):
         if self.num_azs > len(self.availability_zones[self.region]):
             raise ValueError('Entered too many availability zones')
 
-    def ask_common_modules(self):
-        self.use_common_modules = self.choice_question('Would you like to use common modules', ['y', 'n'])
+    def module_ask_module_location(self):
+        # TODO:
         if self.use_common_modules == 'y' and not self.already_forked:
             self.forked_repo = self.choice_question('Do you have a private fork? \n '
-                                                    '(I\'d fork it if you want to customize it ..)', ['y', 'n'])
+                                                    '(I\'d fork it if you want to customize it ..)', ['n', 'y'])
+
+    def module_ask_git_user(self):
+        # TODO:
         if self.forked_repo == 'y' and not self.already_forked:
             self.git_user = self.simple_question('What is your github username / organization?', ['y', 'n'])
             self.already_forked = True
 
+    def module_ask_all(self):
+        """TODO: This is premature."""
+        self.module_ask_module_location()
+        self.module_ask_git_user()
+
+    def ask_common_modules(self):
+        self.use_common_modules = self.choice_question('Would you like to use common modules', ['y', 'n'])
+
         if self.use_common_modules == 'y':
-            common_path = os.path.join('data', 'common.hcl')
-            with open(common_path, 'r') as f:
+            with open(os.path.join(self.stacks_dir, 'common.hcl'), 'r') as f:
                 self.common_modules = hcl.load(f)
+            self.stack[self.r] = StackParser(self.common_modules)
 
     def ask_stack_modules(self):
-        self.use_stack_modules = self.choice_question('What kind of stack are you building?\n',
-                                                      ['basic-p-rep', 'decoupled-p-rep', 'data-science',
-                                                       'data-engineering-hadoop'])
-        data_dir = os.path.join(os.path.abspath(os.path.curdir), 'data')
-        print(type(data_dir))
-        self.stack_names = os.listdir(data_dir)
+
+        self.use_stack_modules = self.choice_question('Do you want to use a generic stack?\n', ['y', 'n'])
+        if self.use_stack_modules == 'y':
+            stack_options = ['basic-p-rep', 'decoupled-p-rep', 'data-science', 'data-engineering-hadoop']
+            self.stack_type = self.choice_question('What type of stack are you building?\n', stack_options)
+            # TODO: Perhaps qualify the options first or allow for alternative input
+            with open(os.path.join(self.stacks_dir, str(self.stack_type)+'.hcl')) as f:
+                self.stack_modules = hcl.load(f)
+            self.stack[self.r] = StackParser(self.stack_modules)
 
     def ask_special_modules(self):
-        while True:
-            self.use_special_modules = self.choice_question('Would you like to enter eny special modules', ['n', 'n'])
+
+        self.use_special_modules = self.choice_question('Would you like to enter any special modules?', ['n', 'y'])
+
+        if self.use_special_modules == 'y':
+            self.special_modules_location = self.choice_question('Where would you like to import special modules from?',
+                                                                 ['local', 'github', 'url'])
+    # TODO: This should iterate until the user stops entering information.  This is also pretty dumb as the user
+    # at that point can just copy and paste so not sure what the purpose of this really is
+    # The real value in this tool is just to have a simple cli to get users into the ecosystem
+    # Many users will not even need to have customizations as they'll be working on another layer (ie application)
+            if self.special_modules_location == 'local':
+                pass
+            if self.special_modules_location == 'github':
+                pass
+            if self.special_modules_location == 'url':
+                pass
 
     def ask_all(self):
         for r in range(self.num_regions):
@@ -165,14 +199,15 @@ class TerragruntGenerator(object):
             self.ask_stack_modules()
             self.ask_special_modules()
 
+    def make_all(self):
+        for r in range(self.num_regions):
+            pass
+
     def main(self):
         if not self.headless:
             self.ask_all()
 
-
-
 if __name__ == '__main__':
-    # tg = TerragruntGenerator(debug=True).choice_question('How many availability zones', ['y', 'n'])
     tg = TerragruntGenerator(num_regions=2, debug=True)
     tg.main()
-    print(tg.stack_names)
+    print(tg.stack)
