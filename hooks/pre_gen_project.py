@@ -22,7 +22,6 @@ class TerragruntGenerator(object):
         else:
             self.environment = '{{ cookiecutter.environment }}'
             self.num_regions = int('{{ cookiecutter.num_regions }}')
-
         self.r = 0  # Region counter
 
         if self.num_regions > 1:
@@ -64,9 +63,10 @@ class TerragruntGenerator(object):
 
     @staticmethod
     def simple_question(question, default=None):
-        prompt = f'{question}:'
+        prompt = '%s:'.format(question)
         if not default:
-            prompt = f'{question}-\n[{default}]:'
+            # prompt = f'{question}-\n[{default}]:'
+            prompt = '%s-\n[%s]:'.format(question, default)
         try:
             user_entry = input(prompt)
         except SyntaxError:
@@ -83,7 +83,8 @@ class TerragruntGenerator(object):
         if not isinstance(defaults, list):
             raise ValueError("Default is not a list")
         choices = frozenset(defaults)
-        input_question = f'{question}-\n[{defaults}]:'
+        input_question = '%s-\n[%s]:'.format(question, defaults)
+
         tries = 0
         try:
             while True:
@@ -106,7 +107,7 @@ class TerragruntGenerator(object):
     def ask_region(self):
         self.get_aws_availability_zones()
         self.possible_regions = self.availability_zones.keys()
-        region = self.choice_question(f'Enter region number {self.r + 1} to deploy into? \n',
+        region = self.choice_question('Enter region number %d to deploy into? \n'.format(self.r + 1),
                                       list(self.possible_regions))
         if region in self.regions:
             raise ValueError('Entered duplicate regions - exiting')
@@ -212,7 +213,6 @@ class TerragruntGenerator(object):
         if not self.headless:
             self.ask_all()
         self.make_all()
-
 
 if __name__ == '__main__':
     tg = TerragruntGenerator(num_regions=1, debug=True)
