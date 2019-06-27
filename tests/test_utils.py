@@ -21,10 +21,18 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures')
 FIXTURES = [
     (
         "common.hcl",
-        True,
+        False,
     ),
     (
         "basic-p-rep.hcl",
+        False,
+    ),
+    (
+        "bad-hcl.hcl",
+        True,
+    ),
+    (
+        "bad-common.hcl",
         True,
     )
 ]

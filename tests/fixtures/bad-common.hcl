@@ -1,5 +1,5 @@
 vpc {
-  type = "module"
+//  type = "module"
   source = "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v1.59.0"
   dependencies = ""
   vars {

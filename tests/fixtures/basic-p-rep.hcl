@@ -7,6 +7,17 @@ ec2 {
   }
 }
 
-logging {
-  type =
+ebs {
+  type = "module"
+  source = ""
+  dependencies = ""
+  vars {}
 }
+
+logging {
+  type = "module"
+  source = ""
+  dependencies = ""
+  vars {}
+}
+
