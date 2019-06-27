@@ -1,11 +1,87 @@
 import os
 import json
-import hcl
 
-from utils import write_availability_zones, StackParser
+import boto3
+import hcl
+from jinja2 import Environment, FileSystemLoader
 
 REGIONS = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ca-central-1',
            'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 'eu-west-3']
+
+
+def get_availability_zones():
+    client = boto3.client('ec2')
+    regions = []
+    zones = {}
+    for region in client.describe_regions()["Regions"]:
+        regions.append(region['RegionName'])
+    regions = sorted(regions)
+    for region in regions:
+        client = boto3.client('ec2', region_name=region)
+        zones[region] = []
+        for zone in client.describe_availability_zones()['AvailabilityZones']:
+            if zone['State'] == 'available':
+                zones[region].append(zone['ZoneName'])
+
+    return zones
+
+
+def write_availability_zones():
+    with open('aws_availability_zones.json', 'w') as f:
+        json.dump(get_availability_zones(), f)
+
+
+def render_in_place(template_dir, template_name, template_dict):
+    env = Environment(loader=FileSystemLoader(template_dir))
+    file = env.get_template(template_name)
+    return file.render(template_dict)
+
+
+def append_vars_to_tfvars(tfvars_path, vars_dict):
+    with open(tfvars_path, 'a+') as f:
+        for k, v in vars_dict.items():
+            f.write('%s = %s\n' % (k, v))
+
+
+class StackParser(object):
+    def __init__(self, hcl_dict):
+        self.hcl_dict = hcl_dict
+        self.stack = {}
+
+        self.main()
+
+    @staticmethod
+    def _validate_format(k, dict):
+        required_keys = ['type']
+        module_keys = ['dependencies', 'vars', 'source']
+        file_keys = ['']
+
+        for key in required_keys:
+            if key not in dict.keys():
+                error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+                raise ValueError(error_msg)
+
+        if dict['type'] == 'module':
+            for key in module_keys:
+                if key not in dict.keys():
+                    error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+                    raise ValueError(error_msg)
+        elif dict['type'] == 'file':
+            for key in file_keys:
+                if key not in dict.keys():
+                    error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+                    raise ValueError(error_msg)
+        else:
+            error_msg = 'Unrecognized type for \'%s\' item' % (k)
+            raise ValueError(error_msg)
+
+    def main(self):
+        self.stack = {'modules': {}, 'files': {}}
+        for k, v in self.hcl_dict.items():
+            self._validate_format(k, v)
+            if v['type'] == 'module':
+                # self.stack['modules'][k].update(v)
+                self.stack['modules'][k] = v
 
 
 class TerragruntGenerator(object):
@@ -63,10 +139,10 @@ class TerragruntGenerator(object):
 
     @staticmethod
     def simple_question(question, default=None):
-        prompt = '%s:'.format(question)
+        prompt = '%s:' % (question)
         if not default:
             # prompt = f'{question}-\n[{default}]:'
-            prompt = '%s-\n[%s]:'.format(question, default)
+            prompt = '%s-\n[%s]:' % (question, default)
         try:
             user_entry = input(prompt)
         except SyntaxError:
@@ -83,7 +159,7 @@ class TerragruntGenerator(object):
         if not isinstance(defaults, list):
             raise ValueError("Default is not a list")
         choices = frozenset(defaults)
-        input_question = '%s-\n[%s]:'.format(question, defaults)
+        input_question = '%s-\n[%s]:' % (question, defaults)
 
         tries = 0
         try:
@@ -107,7 +183,7 @@ class TerragruntGenerator(object):
     def ask_region(self):
         self.get_aws_availability_zones()
         self.possible_regions = self.availability_zones.keys()
-        region = self.choice_question('Enter region number %d to deploy into? \n'.format(self.r + 1),
+        region = self.choice_question('Enter region number %d to deploy into? \n' % (self.r + 1),
                                       list(self.possible_regions))
         if region in self.regions:
             raise ValueError('Entered duplicate regions - exiting')
@@ -213,6 +289,7 @@ class TerragruntGenerator(object):
         if not self.headless:
             self.ask_all()
         self.make_all()
+
 
 if __name__ == '__main__':
     tg = TerragruntGenerator(num_regions=1, debug=True)

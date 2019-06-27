@@ -4,8 +4,8 @@ import hcl
 
 import pytest
 
-from hooks.utils import append_vars_to_tfvars
-from hooks.utils import StackParser
+from pre_gen_project import append_vars_to_tfvars, StackParser
+
 
 def test_render_in_place():
     pass
