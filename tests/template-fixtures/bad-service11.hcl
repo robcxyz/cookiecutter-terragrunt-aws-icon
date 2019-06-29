@@ -17,6 +17,11 @@ terragrunt = {
 
 resource_group = "{{ resource_group }}"
 
-//{% for k, v in vars.items() %}
-//{{ k }} = {{ v }}
+
+{% for k, v in inputs.items() %}
+//{% if v is mapping %}
+//{{ k }} = {% for k2, v2 in v.items() %}
+//  {{ k2 }} = {{ v2 }}
 //{% endfor %}
+//{% endif %}
+{{ k }} = {{ v }}{% endfor %}

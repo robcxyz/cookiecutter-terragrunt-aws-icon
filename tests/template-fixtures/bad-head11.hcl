@@ -43,4 +43,3 @@ terragrunt = {
       skip_credentials_validation = "true"
     }
   }
-}

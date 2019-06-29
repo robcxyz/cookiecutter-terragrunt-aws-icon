@@ -14,6 +14,6 @@ terragrunt = {
 }
 
 
-{% for k, v in vars.items() %}
+{% for k, v in inputs.items() %}
 {{ k }} = {{ v }}
 {% endfor %}

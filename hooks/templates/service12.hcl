@@ -1,5 +1,6 @@
+{% if is_service %}
 terraform {
-  source = "git::git@github.com:foo/modules.git//frontend-app?ref=v0.0.3"
+  source = "{{ source }}"
   extra_arguments "custom_vars" {
     commands  = ["apply", "plan"]
     arguments = ["-var", "foo=42"]
@@ -10,9 +11,16 @@ include {
   path = find_in_parent_folders()
 }
 dependencies {
-  paths = ["../vpc", "../mysql", "../redis"]
+    paths = [{% for i in dependencies %}
+    "../{{ i }}"{% endfor %}
 }
+{% endif %}
 inputs = {
-  instance_type  = "t2.micro"
-  instance_count = 10
+  {% for k, v in inputs.items() %}
+  {% if v is mapping %}
+  {{ k }} = {% for k2, v2 in v.items() %}
+    {{ k2 }} = {{ v2 }}
+  {% endfor %}
+  {% endif %}
+  {{ k }} = {{ v }}{% endfor %}
 }

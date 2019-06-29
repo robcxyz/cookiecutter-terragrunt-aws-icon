@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 
 import boto3
 import hcl
@@ -33,20 +34,20 @@ def write_availability_zones():
         json.dump(get_availability_zones(), f)
 
 
-def render_service(template_dir,
-                   template_name,
-                   source,
-                   dependencies,
-                   variables):
-    env = Environment(loader=FileSystemLoader(template_dir))
-    file = env.get_template(template_name)
-    return file.render({source, dependencies, variables})
+# def render_service(template_dir,
+#                    template_name,
+#                    source,
+#                    dependencies,
+#                    variables):
+#     env = Environment(loader=FileSystemLoader(template_dir))
+#     file = env.get_template(template_name)
+#     return file.render({source, dependencies, variables})
 
 
-def append_vars_to_tfvars(tfvars_path, vars_dict):
-    with open(tfvars_path, 'a+') as f:
-        for k, v in vars_dict.items():
-            f.write('%s = %s\n' % (k, v))
+# def append_vars_to_tfvars(tfvars_path, vars_dict):
+#     with open(tfvars_path, 'a+') as f:
+#         for k, v in vars_dict.items():
+#             f.write('%s = %s\n' % (k, v))
 
 
 class StackParser(object):
@@ -58,23 +59,25 @@ class StackParser(object):
 
     @staticmethod
     def _validate_format(k, stack_dict):
-        required_keys = []
-        module_keys = ['dependencies', 'vars', 'source']
+        required_keys = {}
+        module_keys = {'dependencies': {'type': list},
+                       'inputs': {'type': dict},
+                       'source': {'type': str}}
         file_keys = ['']
 
-        for key in required_keys:
+        for key in required_keys.items():
             if key not in stack_dict.keys():
                 error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
                 raise ValueError(error_msg)
 
         # if dict['type'] == 'module':
-        for key in module_keys:
+        for key, val in module_keys.items():
             if key not in stack_dict.keys():
                 error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
                 raise ValueError(error_msg)
-        if not isinstance(stack_dict['dependencies'], list):
-            error_msg = 'dependencies needs to be of type list for \'%s\' item' % k
-            raise ValueError(error_msg)
+            if not isinstance(stack_dict[key], val['type']):
+                error_msg = '%s needs to be of type %s for \'%s\' item' % (key, str(val['type']), k)
+                raise ValueError(error_msg)
 
         # TODO: RM for files?  Need to update 'type' condition...
         # if dict['type'] == 'file':
@@ -283,7 +286,8 @@ class TerragruntGenerator(object):
 
     def ask_terragrunt_version(self):
         if not self.headless:
-            self.terraform_version = self.choice_question('What version of Terraform do you want to use?', ['0.11', '0.12'])
+            self.terraform_version = self.choice_question('What version of Terraform do you want to use?',
+                                                          ['0.11', '0.12'])
         if self.terraform_version == '0.11':
             self.terraform_version = str(11)
             self.terragrunt_file = 'terraform.tfvars'
@@ -304,9 +308,9 @@ class TerragruntGenerator(object):
 
     # def init_all(self):
 
-
     def make_all(self):
 
+        env = Environment(loader=FileSystemLoader(self.templates_dir))
         for r in range(self.num_regions):
             region_modules = self.stack[r]['modules'].keys()
             # for m in range(len(region_modules)):
@@ -314,18 +318,28 @@ class TerragruntGenerator(object):
                 module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
                 os.makedirs(module_path)
                 stack_dict = self.stack[r]['modules'][m]
-
-                env = Environment(loader=FileSystemLoader(self.templates_dir))
-                file = env.get_template('service' + str(self.terraform_version) + '.hcl')
-
-                rendered_service = file.render(stack_dict)
-
-                pprint(rendered_service)
-
+                stack_dict['is_service'] = True
+                input_file = env.get_template('service' + str(self.terraform_version) + '.hcl')
+                rendered_file = input_file.render(stack_dict)
                 with open(os.path.join(module_path, self.terragrunt_file), 'w') as fp:
-                    fp.write(rendered_service)
+                    fp.write(rendered_file)
 
+        # TODO: Determine if this is unnecessary rendering...
+        input_file = env.get_template('head' + str(self.terraform_version) + '.hcl')
+        rendered_file = input_file.render()
+        with open(os.path.join(os.path.curdir, '..', self.terragrunt_file), 'w') as fp:
+            fp.write(rendered_file)
 
+        # TODO: This is neccesary rendering but need to build objects
+        # input_file = env.get_template('service' + str(self.terraform_version) + '.hcl')
+        # rendered_file = input_file.render()
+        # with open(os.path.join(os.path.curdir, '..', 'environment.tfvars'), 'w') as fp:
+        #     fp.write(rendered_file)
+
+        # input_file = env.get_template('service' + str(self.terraform_version) + '.hcl')
+        # rendered_file = input_file.render()
+        # with open(os.path.join(os.path.curdir, 'region.tfvars'), 'w') as fp:
+        #     fp.write(rendered_file)
 
     def main(self):
         if not self.headless:
@@ -334,6 +348,7 @@ class TerragruntGenerator(object):
 
 
 if __name__ == '__main__':
+    shutil.rmtree('ap-northeast-1')
     tg = TerragruntGenerator(num_regions=1, debug=True)
     tg.main()
     print(tg.stack)

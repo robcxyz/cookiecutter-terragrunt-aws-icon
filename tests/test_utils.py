@@ -4,17 +4,17 @@ import hcl
 
 import pytest
 
-from pre_gen_project import append_vars_to_tfvars, StackParser
+from pre_gen_project import StackParser
 
 
 def test_render_in_place():
     pass
 
-def test_append_vars_to_tfvars(tmpdir):
-    tfv = 'example.tfvars'
-    p = tmpdir.mkdir("sub").join(tfv)
-    append_vars_to_tfvars(p, {'stuff': 'things', 'foo': 'bar'})
-    assert p.read() == 'stuff = things\nfoo = bar\n'
+# def test_append_vars_to_tfvars(tmpdir):
+#     tfv = 'example.tfvars'
+#     p = tmpdir.mkdir("sub").join(tfv)
+#     append_vars_to_tfvars(p, {'stuff': 'things', 'foo': 'bar'})
+#     assert p.read() == 'stuff = things\nfoo = bar\n'
 
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'stack-fixtures')
