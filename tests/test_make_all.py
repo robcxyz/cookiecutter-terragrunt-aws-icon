@@ -23,7 +23,7 @@ SINGLE_STACK = {0: {'region': 'ap-northeast-1',
                         'logging': {'type': 'module', 'source': '', 'dependencies': '', 'vars': {}}}, 'files': {}}}
 
 
-def test_make_all_(monkeypatch, tmpdir):
+def test_make_all(monkeypatch, tmpdir):
     p = tmpdir.mkdir("sub")
     os.chdir(p)
     inputs = ['']
