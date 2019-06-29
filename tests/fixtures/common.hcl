@@ -1,7 +1,7 @@
 vpc {
   type = "module"
   source = "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v1.59.0"
-  dependencies = ""
+  dependencies = ["foo"]
   vars {
     name = "vpc-dev"
     enable_nat_gateway = false
@@ -24,7 +24,7 @@ security_groups {
   type = "module"
   source = "github.com/robcxyz/terragrunt-root-modules.git//common/keys"
   //  source = "github.com/{ git_user }/{ repo }.git//{ module_path }"
-  dependencies = [""]
+  dependencies = ["stuff", "things"]
   vars {
     name = "security_groups"
   }

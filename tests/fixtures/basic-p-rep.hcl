@@ -1,7 +1,7 @@
 ec2 {
   type = "module"
   source = "github.com/{ git_user }/{ repo }.git//{{ module_path }}"
-  dependencies = "{ dependencies }"
+  dependencies = ["{ dependencies }"]
   vars {
     name = "ec2"
   }
@@ -10,14 +10,14 @@ ec2 {
 ebs {
   type = "module"
   source = ""
-  dependencies = ""
+  dependencies = []
   vars {}
 }
 
 logging {
   type = "module"
   source = ""
-  dependencies = ""
+  dependencies = ["stuff", "things"]
   vars {}
 }
 

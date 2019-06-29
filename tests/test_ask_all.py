@@ -95,40 +95,40 @@ def test_ask_availability_zones(monkeypatch):
     assert tg.num_azs == 3
 
 
-def test_ask_common_modules(monkeypatch):
-    # Single region
-    inputs = ['', '']
-    input_generator = (i for i in inputs)
-    monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
-    tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1')
-    tg.ask_common_modules()
+# def test_ask_common_modules(monkeypatch):
+#     # Single region
+#     inputs = ['', '']
+#     input_generator = (i for i in inputs)
+#     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
+#     tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1')
+#     tg.ask_common_modules()
+#
+#     assert tg.stack == 3
 
-    assert tg.stack == 3
 
-
-def test_ask_all(monkeypatch):
-    # Single regions
-    inputs = ['', '', '']
-    input_generator = (i for i in inputs)
-    monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
-    tg = TerragruntGenerator(num_regions=1, debug=True)
-    tg.ask_all()
-    assert tg.stack == {0: {'region': 'ap-northeast-1'}}
-
-    # Single regions
-    inputs = ['', 'ap-northeast-1', 'max']
-    input_generator = (i for i in inputs)
-    monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
-    tg = TerragruntGenerator(num_regions=1, debug=True)
-    tg.ask_all()
-    assert tg.num_azs == 3
-
-    # Multiple regions
-    inputs = ['', '', '', 'us-east-2', '']
-    input_generator = (i for i in inputs)
-    monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
-    tg = TerragruntGenerator(num_regions=2, debug=True)
-    tg.ask_all()
-    assert tg.stack == {0: {'region': 'ap-northeast-1'}, 1: {'region': 'us-east-2'}}
+# def test_ask_all(monkeypatch):
+#     # Single regions
+#     inputs = ['', '', '']
+#     input_generator = (i for i in inputs)
+#     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
+#     tg = TerragruntGenerator(num_regions=1, debug=True)
+#     tg.ask_all()
+#     assert tg.stack == {0: {'region': 'ap-northeast-1'}}
+#
+#     # Single regions
+#     inputs = ['', 'ap-northeast-1', 'max']
+#     input_generator = (i for i in inputs)
+#     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
+#     tg = TerragruntGenerator(num_regions=1, debug=True)
+#     tg.ask_all()
+#     assert tg.num_azs == 3
+#
+#     # Multiple regions
+#     inputs = ['', '', '', 'us-east-2', '']
+#     input_generator = (i for i in inputs)
+#     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
+#     tg = TerragruntGenerator(num_regions=2, debug=True)
+#     tg.ask_all()
+#     assert tg.stack == {0: {'region': 'ap-northeast-1'}, 1: {'region': 'us-east-2'}}
 
 

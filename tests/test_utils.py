@@ -40,7 +40,7 @@ FIXTURES = [
 @pytest.mark.parametrize("hcl_fname,invalid", FIXTURES)
 def test_stack_parser(hcl_fname, invalid, monkeypatch):
     with open(os.path.join(FIXTURE_DIR, hcl_fname), 'rb') as fp:
-
+        print(f'hcl_fname is {hcl_fname}')
         inp = fp.read()
         print(inp)
 
