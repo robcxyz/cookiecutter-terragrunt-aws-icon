@@ -5,6 +5,8 @@ import boto3
 import hcl
 from jinja2 import Environment, FileSystemLoader
 
+from pprint import pprint
+
 REGIONS = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ca-central-1',
            'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 'eu-west-3']
 
@@ -31,10 +33,14 @@ def write_availability_zones():
         json.dump(get_availability_zones(), f)
 
 
-def render_in_place(template_dir, template_name, template_dict):
+def render_service(template_dir,
+                   template_name,
+                   source,
+                   dependencies,
+                   variables):
     env = Environment(loader=FileSystemLoader(template_dir))
     file = env.get_template(template_name)
-    return file.render(template_dict)
+    return file.render({source, dependencies, variables})
 
 
 def append_vars_to_tfvars(tfvars_path, vars_dict):
@@ -72,13 +78,13 @@ class StackParser(object):
 
         # TODO: RM for files?  Need to update 'type' condition...
         # if dict['type'] == 'file':
-            # for key in file_keys:
-            #         if key not in dict.keys():
-            #             error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
-            #             raise ValueError(error_msg)
-            # else:
-            #     error_msg = 'Unrecognized type for \'%s\' item' % (k)
-            #     raise ValueError(error_msg)
+        # for key in file_keys:
+        #         if key not in dict.keys():
+        #             error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+        #             raise ValueError(error_msg)
+        # else:
+        #     error_msg = 'Unrecognized type for \'%s\' item' % (k)
+        #     raise ValueError(error_msg)
 
     def main(self):
         self.stack = {'modules': {}, 'files': {}}
@@ -94,6 +100,7 @@ class TerragruntGenerator(object):
     def __init__(self, environment='dev', num_regions=1, debug=False, headless=False, *args, **kwargs):
         self.debug = debug
         self.terraform_version = None
+        self.terragrunt_file = None
         self.headless = headless
         self.stacks_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'hooks', 'stacks')
         self.templates_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'hooks', 'templates')
@@ -274,6 +281,16 @@ class TerragruntGenerator(object):
             if self.special_modules_location == 'url':
                 pass
 
+    def ask_terragrunt_version(self):
+        if not self.headless:
+            self.terraform_version = self.choice_question('What version of Terraform do you want to use?', ['0.11', '0.12'])
+        if self.terraform_version == '0.11':
+            self.terraform_version = str(11)
+            self.terragrunt_file = 'terraform.tfvars'
+        else:
+            self.terraform_version = str(12)
+            self.terragrunt_file = 'terragrunt.hcl'
+
     def ask_all(self):
         for r in range(self.num_regions):
             self.r = r
@@ -283,13 +300,12 @@ class TerragruntGenerator(object):
             self.ask_common_modules()
             self.ask_stack_modules()
             self.ask_special_modules()
+            self.ask_terragrunt_version()
+
+    # def init_all(self):
+
 
     def make_all(self):
-        self.terraform_version = self.choice_question('What version of Terraform do you want to use?', ['0.11', '0.12'])
-        if self.terraform_version == '0.11':
-            self.terraform_version = str(11)
-        else:
-            self.terraform_version = str(12)
 
         for r in range(self.num_regions):
             region_modules = self.stack[r]['modules'].keys()
@@ -298,27 +314,23 @@ class TerragruntGenerator(object):
                 module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
                 os.makedirs(module_path)
                 stack_dict = self.stack[r]['modules'][m]
-                # render_in_place(template_dir=self.templates_dir,
-                #                 template_name='service' + self.terraform_version + '.hcl',
-                #
-                #                 template_dict=self.stack[r]['modules'][m])
 
-                # Render services
-            #     with open(os.path.join(self.stacks_dir, '..', 'templates',
-            #                            'service'+self.terraform_version+'.hcl' )) as fp:
-            #         pass
-            #
-            # with open(os.path.join(self.stacks_dir, '..', 'templates', '')) as fp:
-            #     pass
+                env = Environment(loader=FileSystemLoader(self.templates_dir))
+                file = env.get_template('service' + str(self.terraform_version) + '.hcl')
 
-    def render_all(self):
-        pass
+                rendered_service = file.render(stack_dict)
+
+                pprint(rendered_service)
+
+                with open(os.path.join(module_path, self.terragrunt_file), 'w') as fp:
+                    fp.write(rendered_service)
+
+
 
     def main(self):
         if not self.headless:
             self.ask_all()
         self.make_all()
-        self.render_all()
 
 
 if __name__ == '__main__':
