@@ -51,29 +51,34 @@ class StackParser(object):
         self.main()
 
     @staticmethod
-    def _validate_format(k, dict):
-        required_keys = ['type']
+    def _validate_format(k, stack_dict):
+        required_keys = []
         module_keys = ['dependencies', 'vars', 'source']
         file_keys = ['']
 
         for key in required_keys:
-            if key not in dict.keys():
+            if key not in stack_dict.keys():
                 error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
                 raise ValueError(error_msg)
 
-        if dict['type'] == 'module':
-            for key in module_keys:
-                if key not in dict.keys():
-                    error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
-                    raise ValueError(error_msg)
-        elif dict['type'] == 'file':
-            for key in file_keys:
-                if key not in dict.keys():
-                    error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
-                    raise ValueError(error_msg)
-        else:
-            error_msg = 'Unrecognized type for \'%s\' item' % (k)
+        # if dict['type'] == 'module':
+        for key in module_keys:
+            if key not in stack_dict.keys():
+                error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+                raise ValueError(error_msg)
+        if not isinstance(stack_dict['dependencies'], list):
+            error_msg = 'dependencies needs to be of type list for \'%s\' item' % k
             raise ValueError(error_msg)
+
+        # TODO: RM for files?  Need to update 'type' condition...
+        # if dict['type'] == 'file':
+            # for key in file_keys:
+            #         if key not in dict.keys():
+            #             error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+            #             raise ValueError(error_msg)
+            # else:
+            #     error_msg = 'Unrecognized type for \'%s\' item' % (k)
+            #     raise ValueError(error_msg)
 
     def main(self):
         self.stack = {'modules': {}, 'files': {}}
@@ -88,8 +93,10 @@ class TerragruntGenerator(object):
 
     def __init__(self, environment='dev', num_regions=1, debug=False, headless=False, *args, **kwargs):
         self.debug = debug
+        self.terraform_version = None
         self.headless = headless
         self.stacks_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'hooks', 'stacks')
+        self.templates_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'hooks', 'templates')
 
         # These values need override to pass tests instead of rendering them
         if self.debug:
@@ -278,20 +285,44 @@ class TerragruntGenerator(object):
             self.ask_special_modules()
 
     def make_all(self):
+        self.terraform_version = self.choice_question('What version of Terraform do you want to use?', ['0.11', '0.12'])
+        if self.terraform_version == '0.11':
+            self.terraform_version = str(11)
+        else:
+            self.terraform_version = str(12)
+
         for r in range(self.num_regions):
             region_modules = self.stack[r]['modules'].keys()
             # for m in range(len(region_modules)):
             for m in region_modules:
                 module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
                 os.makedirs(module_path)
+                stack_dict = self.stack[r]['modules'][m]
+                # render_in_place(template_dir=self.templates_dir,
+                #                 template_name='service' + self.terraform_version + '.hcl',
+                #
+                #                 template_dict=self.stack[r]['modules'][m])
+
+                # Render services
+            #     with open(os.path.join(self.stacks_dir, '..', 'templates',
+            #                            'service'+self.terraform_version+'.hcl' )) as fp:
+            #         pass
+            #
+            # with open(os.path.join(self.stacks_dir, '..', 'templates', '')) as fp:
+            #     pass
+
+    def render_all(self):
+        pass
 
     def main(self):
         if not self.headless:
             self.ask_all()
         self.make_all()
+        self.render_all()
 
 
 if __name__ == '__main__':
     tg = TerragruntGenerator(num_regions=1, debug=True)
     tg.main()
     print(tg.stack)
+    # render_in_place()

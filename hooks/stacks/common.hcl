@@ -1,7 +1,7 @@
 vpc {
   type = "module"
   source = "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v1.59.0"
-  dependencies = ""
+  dependencies = []
   vars {
     name = "vpc-dev"
     enable_nat_gateway = false

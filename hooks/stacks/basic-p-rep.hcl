@@ -1,7 +1,7 @@
 ec2 {
   type = "module"
-  source = "github.com/{ git_user }/{ repo }.git//{{ module_path }}"
-  dependencies = "{ dependencies }"
+  source = "github.com/robcxyz/terragrunt-aws-modules.git//compute/ec2?ref=v1.1.0"
+  dependencies = ["vpc"]
   vars {
     name = "ec2"
   }
@@ -10,14 +10,14 @@ ec2 {
 ebs {
   type = "module"
   source = ""
-  dependencies = ""
+  dependencies = ["ec2"]
   vars {}
 }
 
 logging {
   type = "module"
   source = ""
-  dependencies = ""
+  dependencies = ["ec2"]
   vars {}
 }
 
