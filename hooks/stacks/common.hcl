@@ -1,7 +1,6 @@
 vpc {
   type = "module"
   source = "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v1.59.0"
-  dependencies = []
   inputs {
     name = "vpc-dev"
     enable_nat_gateway = false
@@ -11,10 +10,9 @@ vpc {
   }
 }
 
-keysg {
+keys {
   type = "module"
-  source = ""
-  dependencies = [""]
+  source = "github.com/robcxyz/terragrunt-root-modules.git/common/keys"
   inputs {
     name = "keys"
   }
@@ -22,11 +20,9 @@ keysg {
 
 security_groups {
   type = "module"
-  source = ""
-  dependencies = [""]
+  source = "github.com/robcxyz/terragrunt-root-modules.git/common/keys"
+  dependencies = ["stuff", "things"]
   inputs {
     name = "security_groups"
   }
 }
-
-

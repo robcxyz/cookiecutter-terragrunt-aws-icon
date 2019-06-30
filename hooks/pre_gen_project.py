@@ -42,9 +42,9 @@ class StackParser(object):
     @staticmethod
     def _validate_format(k, stack_dict):
         required_keys = {}
-        module_keys = {'dependencies': {'type': list},
-                       'inputs': {'type': dict},
-                       'source': {'type': str}}
+        module_keys = {'dependencies': {'type': list, 'optional': True},
+                       'inputs': {'type': dict, 'optional': True},
+                       'source': {'type': str, 'optional': False}}
         file_keys = ['']
 
         for key in required_keys.items():
@@ -54,13 +54,14 @@ class StackParser(object):
 
         # if dict['type'] == 'module':
         for key, val in module_keys.items():
-            if key not in stack_dict.keys():
-                error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
-                raise ValueError(error_msg)
-            if not isinstance(stack_dict[key], val['type']):
-                # print('stack_dict = %s %s') % (str(stack_dict[key]), str(val['type']))
-                error_msg = '%s needs to be of type %s for \'%s\' item' % (key, str(val['type']), k)
-                raise ValueError(error_msg)
+            if not val['optional']:
+                if key not in stack_dict.keys():
+                    error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+                    raise ValueError(error_msg)
+                if not isinstance(stack_dict[key], val['type']):
+                    # print('stack_dict = %s %s') % (str(stack_dict[key]), str(val['type']))
+                    error_msg = '%s needs to be of type %s for \'%s\' item' % (key, str(val['type']), k)
+                    raise ValueError(error_msg)
 
         # TODO: RM for files?  Need to update 'type' condition...
         # if dict['type'] == 'file':

@@ -125,10 +125,16 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
             inp = hcl.load(fp)
             tg.stack[0] = StackParser(inp).stack
             tg.stack[0].update({'region': 'ap-northeast-1'})
-
             if not service_invalid and not head_invalid:
                 print('Valid \n\n\n')
                 tg.make_all()
+                assert os.listdir(p) == ['ap-northeast-1']
+                print(os.listdir(os.path.join(p, 'ap-northeast-1')))
+                # TODO: VERSION.... region.tfvars...
+                assert os.listdir(os.path.join(p, 'ap-northeast-1')) == ['keys', 'region.tfvars',
+                                                                         'security_groups', 'vpc']
+
+
             else:
                 # with pytest.raises((ValueError, UndefinedError)):
                 with pytest.raises(ValueError):
@@ -138,4 +144,4 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
             with pytest.raises((ValueError, KeyError)):
                 tg.make_all()
 
-    # assert os.listdir(p) == ['ap-northeast-1']
+
