@@ -373,11 +373,11 @@ class TerragruntGenerator(object):
 
 
 if __name__ == '__main__':
-    shutil.rmtree('ap-northeast-1')
 
     # Context
     cc_trigger = '{{ cookiecutter.environment }}'
     if cc_trigger == '{{ cookiecutter.environment }}':
+        # shutil.rmtree('ap-northeast-1')
         tg = TerragruntGenerator(num_regions=1, debug=True)
         tg.main()
         print(tg.stack)
