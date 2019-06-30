@@ -219,8 +219,8 @@ class TerragruntGenerator(object):
 
     def ask_availability_zones(self):
 
-        self.num_azs = self.choice_question('How many availability zones',
-                                            ['1', '2', '3', '4', '5', '6', '7', 'max'])
+        self.num_azs = self.choice_question('How many availability zones?',
+                                            [1, 2, 3, 4, 5, 6, 7, 'max'])
         if self.num_azs == 'max':
             self.num_azs = len(self.availability_zones[self.region])
         else:
@@ -351,13 +351,13 @@ class TerragruntGenerator(object):
         env_dict = {}  # TODO
         rendered_file = env.get_template(self.head_template).render(env_dict)
         # rendered_file = self.service_template.render(env_dict)
-        with open(os.path.join(os.path.curdir, '..', 'environment.tfvars'), 'w') as fp:
+        with open(os.path.join(os.path.curdir, 'environment.tfvars'), 'w') as fp:
             fp.write(rendered_file)
         #
         head_dict = {}  # TODO
         rendered_file = env.get_template(self.head_template).render(head_dict)
         # rendered_file = self.head_template.render(head_dict)
-        with open(os.path.join(os.path.curdir, '..', self.terragrunt_file), 'w') as fp:
+        with open(os.path.join(os.path.curdir, self.terragrunt_file), 'w') as fp:
             fp.write(rendered_file)
 
     def main(self):

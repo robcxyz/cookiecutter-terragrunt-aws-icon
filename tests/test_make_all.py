@@ -4,7 +4,7 @@ import pytest
 import hcl
 
 from hooks.pre_gen_project import TerragruntGenerator, StackParser
-from jinja2.exceptions import UndefinedError
+from jinja2.exceptions import UndefinedError, TemplateSyntaxError
 from tests.test_render_all import FIXTURE_DIR as RENDER_FIXTURE_DIR
 
 from pprint import pprint
@@ -51,10 +51,10 @@ HEAD_FIXTURES = [
         "head",
         False
     ),
-    # (
-    #     "bad-head",
-    #     True,
-    # )
+    (
+        "bad-head",
+        True,
+    )
 ]
 
 SERVICE_FIXTURES = [
@@ -62,10 +62,10 @@ SERVICE_FIXTURES = [
         "service",
         False
     ),
-    # (
-    #     "bad-service",
-    #     True,
-    # )
+    (
+        "bad-service",
+        True,
+    )
 ]
 
 # TODO: RM all this once 11 is completely gone
@@ -111,14 +111,8 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
 
     tg.head_template = head_file + tg.terraform_version + '.hcl'
     tg.service_template = service_file + tg.terraform_version + '.hcl'
-    print('\n\n\nhere')
-    print(tg.head_template)
-    print(tg.service_template)
     p = tmpdir.mkdir("sub")
     os.chdir(p)
-
-    print()
-
     with open(os.path.join(FIXTURE_DIR, stack_file), 'r') as fp:
         print(f'\n\ntpl_fname is {service_file}\n\n')
         if not stack_invalid:
@@ -127,19 +121,24 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
             tg.stack[0] = StackParser(inp).stack
             tg.stack[0].update({'region': 'ap-northeast-1'})
             if not service_invalid and not head_invalid:
-                print('Valid \n\n\n')
+                print(f'{service_file} and {head_file} is valid')
                 tg.make_all()
-                assert os.listdir(p) == ['ap-northeast-1']
-                print(os.listdir(os.path.join(p, 'ap-northeast-1')))
-                # TODO: VERSION.... region.tfvars...
-                # assert os.listdir(os.path.join(p, 'ap-northeast-1')) == ['keys', 'region.tfvars',
-                #                                                          'security_groups', 'vpc']
 
-
+                if int(tg.terraform_version) == 12:
+                    assert os.listdir(p) == ['ap-northeast-1', 'environment.tfvars', 'terragrunt.hcl']
+                elif int(tg.terraform_version) == 11:
+                    assert os.listdir(p) == ['ap-northeast-1', 'environment.tfvars', 'terraform.tfvars']
+                else:
+                    print(tg.terraform_version)
+                    print(os.listdir(os.path.join(p)))
+                    raise UndefinedError
+            elif service_invalid:
+                with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError, UndefinedError)):
+                    print(f'Service file = {tg.service_template} is invalid ')
+                    tg.make_all()
             else:
-                with pytest.raises((ValueError, UndefinedError)):
-                # with pytest.raises(ValueError):
-                    print('Invalid \n\n\n')
+                with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError, UndefinedError)):
+                    print(f'Head file = {tg.head_template} is invalid ')
                     tg.make_all()
         else:
             with pytest.raises((ValueError, KeyError)):
