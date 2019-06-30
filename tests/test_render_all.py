@@ -38,7 +38,7 @@ SINGLE_STACK = {0: {'region': 'ap-northeast-1',
 
 VPC_MODULE = SINGLE_STACK[0]['modules']['vpc']
 
-FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'template-fixtures')
+FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'templates')
 
 FIXTURES = [
     (
@@ -87,6 +87,7 @@ FIXTURES = [
 
 @pytest.mark.parametrize("tpl_fname,invalid,version", FIXTURES)
 def test_render_service_vpc(tpl_fname, invalid, version, tmpdir):
+
     with open(os.path.join(FIXTURE_DIR, tpl_fname), 'rb') as fp:
         print(f'\n\ntpl_fname is {tpl_fname}\n\n')
 

@@ -4,6 +4,8 @@ import pytest
 
 from hooks.pre_gen_project import TerragruntGenerator
 
+from pprint import pprint
+
 
 def test_ask_simple_question_defaults(monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: "ben")
@@ -34,7 +36,6 @@ def test_choice_question(monkeypatch, capsys):
 
 
 def test_get_aws_availability_zones(monkeypatch, tmpdir):
-
     monkeypatch.setattr('builtins.input', lambda x: "n")
     tg = TerragruntGenerator(debug=True)
     tg.get_aws_availability_zones()
@@ -55,10 +56,10 @@ def test_get_aws_availability_zones(monkeypatch, tmpdir):
 #     tg.ask_availability_zones()
 #     assert tg.num_azs == str(3)
 
-    # monkeypatch.setattr('builtins.input', lambda x: "max")
-    # tg = TerragruntGenerator(debug=True, )
-    # tg.ask_availability_zones()
-    # assert tg.num_azs == str(3)
+# monkeypatch.setattr('builtins.input', lambda x: "max")
+# tg = TerragruntGenerator(debug=True, )
+# tg.ask_availability_zones()
+# assert tg.num_azs == str(3)
 
 # TODO: Test for raising "Option not available"
 
@@ -95,16 +96,16 @@ def test_ask_availability_zones(monkeypatch):
     assert tg.num_azs == 3
 
 
-# def test_ask_common_modules(monkeypatch):
-#     # Single region
-#     inputs = ['', '']
-#     input_generator = (i for i in inputs)
-#     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
-#     tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1')
-#     tg.ask_common_modules()
-#
-#     assert tg.stack == 3
+def test_ask_common_modules(monkeypatch):
+    # Single region
+    inputs = ['', '']
+    input_generator = (i for i in inputs)
+    monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
+    tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1', stack={0: {'modules': {}}})
+    tg.ask_common_modules()
 
+    pprint(tg.stack)
+    # assert tg.stack == 3
 
 # def test_ask_all(monkeypatch):
 #     # Single regions
@@ -130,5 +131,3 @@ def test_ask_availability_zones(monkeypatch):
 #     tg = TerragruntGenerator(num_regions=2, debug=True)
 #     tg.ask_all()
 #     assert tg.stack == {0: {'region': 'ap-northeast-1'}, 1: {'region': 'us-east-2'}}
-
-

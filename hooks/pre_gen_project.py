@@ -6,8 +6,6 @@ import boto3
 import hcl
 from jinja2 import Environment, FileSystemLoader
 
-from pprint import pprint
-
 REGIONS = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ca-central-1',
            'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 'eu-west-3']
 
@@ -32,22 +30,6 @@ def get_availability_zones():
 def write_availability_zones():
     with open('aws_availability_zones.json', 'w') as f:
         json.dump(get_availability_zones(), f)
-
-
-# def render_service(template_dir,
-#                    template_name,
-#                    source,
-#                    dependencies,
-#                    variables):
-#     env = Environment(loader=FileSystemLoader(template_dir))
-#     file = env.get_template(template_name)
-#     return file.render({source, dependencies, variables})
-
-
-# def append_vars_to_tfvars(tfvars_path, vars_dict):
-#     with open(tfvars_path, 'a+') as f:
-#         for k, v in vars_dict.items():
-#             f.write('%s = %s\n' % (k, v))
 
 
 class StackParser(object):
@@ -96,6 +78,7 @@ class StackParser(object):
             if v['type'] == 'module':
                 # self.stack['modules'][k].update(v)
                 self.stack['modules'][k] = v
+        return self.stack
 
 
 class TerragruntGenerator(object):
@@ -112,6 +95,7 @@ class TerragruntGenerator(object):
         if self.debug:
             self.environment = environment
             self.num_regions = num_regions
+
         else:
             self.environment = '{{ cookiecutter.environment }}'
             self.num_regions = int('{{ cookiecutter.num_regions }}')
@@ -142,6 +126,9 @@ class TerragruntGenerator(object):
 
         self.use_special_modules = None
         self.special_modules_location = None
+
+        self.service_template = None
+        self.head_template = None
 
         self.forked_repo = 'n'
         self.already_forked = False
@@ -207,6 +194,7 @@ class TerragruntGenerator(object):
         self.regions.append(region)
         self.region = region
         self.stack[self.r] = {'region': region}
+        self.stack[self.r] = {'modules': {}}
 
     def get_aws_availability_zones(self):
         if not self.got_az_list:
@@ -253,7 +241,9 @@ class TerragruntGenerator(object):
         if self.use_common_modules == 'y':
             with open(os.path.join(self.stacks_dir, 'common.hcl'), 'r') as f:
                 self.common_modules = hcl.load(f)
-            self.stack[self.r]['modules'].update(StackParser(self.common_modules).stack['modules'])
+            # self.stack[self.r]['modules'] = StackParser(self.common_modules).stack['modules']
+            modules = StackParser(self.common_modules).stack['modules']
+            self.stack[self.r]['modules'].update(modules)
 
     def ask_stack_modules(self):
 
@@ -295,6 +285,24 @@ class TerragruntGenerator(object):
             self.terraform_version = str(12)
             self.terragrunt_file = 'terragrunt.hcl'
 
+        self.service_template = 'service' + str(self.terraform_version) + '.hcl'
+        self.head_template = 'head' + str(self.terraform_version) + '.hcl'
+
+
+
+    # def ask_templaetes_dir(self):
+    #     if not self.debug:
+    #         self.terraform_version = self.choice_question('What version of Terraform do you want to use?',
+    #                                                       ['0.11', '0.12'])
+    #     else:
+    #         self.
+    #     if self.terraform_version == '0.11':
+    #         self.terraform_version = str(11)
+    #         self.terragrunt_file = 'terraform.tfvars'
+    #     else:
+    #         self.terraform_version = str(12)
+    #         self.terragrunt_file = 'terragrunt.hcl'
+
     def ask_all(self):
         for r in range(self.num_regions):
             self.r = r
@@ -308,38 +316,55 @@ class TerragruntGenerator(object):
 
     # def init_all(self):
 
+    @staticmethod
+    def render_file():
+        pass
+
     def make_all(self):
 
         env = Environment(loader=FileSystemLoader(self.templates_dir))
+
+        # if not self.debug:
+        #     # Must override in tests
+        #     self.service_template = 'service' + str(self.terraform_version) + '.hcl'
+        #     self.head_template = 'head' + str(self.terraform_version) + '.hcl'
+
         for r in range(self.num_regions):
+
             region_modules = self.stack[r]['modules'].keys()
-            # for m in range(len(region_modules)):
+
             for m in region_modules:
                 module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
                 os.makedirs(module_path)
                 stack_dict = self.stack[r]['modules'][m]
-                stack_dict['is_service'] = True
-                input_file = env.get_template('service' + str(self.terraform_version) + '.hcl')
-                rendered_file = input_file.render(stack_dict)
+
+                stack_dict.update({'is_service': True})  # TODO: This needs to be pulled out in the headless...
+
+                env_tpl = env.get_template(self.service_template)
+                rendered_file = env_tpl.render(stack_dict)
+                # rendered_file = self.service_template.render(stack_dict)
                 with open(os.path.join(module_path, self.terragrunt_file), 'w') as fp:
                     fp.write(rendered_file)
 
-        # TODO: Determine if this is unnecessary rendering...
-        input_file = env.get_template('head' + str(self.terraform_version) + '.hcl')
-        rendered_file = input_file.render()
-        with open(os.path.join(os.path.curdir, '..', self.terragrunt_file), 'w') as fp:
+            # Make the path first
+            region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'])
+            region_dict = {}  # TODO
+            rendered_file = env.get_template(self.service_template).render(region_dict)
+            # rendered_file = self.service_template.render(region_dict)
+            with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
+                fp.write(rendered_file)
+
+        env_dict = {}  # TODO
+        rendered_file = env.get_template(self.head_template).render(env_dict)
+        # rendered_file = self.service_template.render(env_dict)
+        with open(os.path.join(os.path.curdir, '..', 'environment.tfvars'), 'w') as fp:
             fp.write(rendered_file)
 
-        # TODO: This is neccesary rendering but need to build objects
-        # input_file = env.get_template('service' + str(self.terraform_version) + '.hcl')
-        # rendered_file = input_file.render()
-        # with open(os.path.join(os.path.curdir, '..', 'environment.tfvars'), 'w') as fp:
-        #     fp.write(rendered_file)
-
-        # input_file = env.get_template('service' + str(self.terraform_version) + '.hcl')
-        # rendered_file = input_file.render()
-        # with open(os.path.join(os.path.curdir, 'region.tfvars'), 'w') as fp:
-        #     fp.write(rendered_file)
+        head_dict = {}  # TODO
+        rendered_file = env.get_template(self.head_template).render(head_dict)
+        # rendered_file = self.head_template.render(head_dict)
+        with open(os.path.join(os.path.curdir, '..', self.terragrunt_file), 'w') as fp:
+            fp.write(rendered_file)
 
     def main(self):
         if not self.headless:
@@ -349,7 +374,13 @@ class TerragruntGenerator(object):
 
 if __name__ == '__main__':
     shutil.rmtree('ap-northeast-1')
-    tg = TerragruntGenerator(num_regions=1, debug=True)
-    tg.main()
-    print(tg.stack)
-    # render_in_place()
+
+    # Context
+    cc_trigger = '{{ cookiecutter.environment }}'
+    if cc_trigger == '{{ cookiecutter.environment }}':
+        tg = TerragruntGenerator(num_regions=1, debug=True)
+        tg.main()
+        print(tg.stack)
+    else:
+        tg = TerragruntGenerator(num_regions='{{ cookiecutter.num_regions }}', debug=False)
+        tg.main()
