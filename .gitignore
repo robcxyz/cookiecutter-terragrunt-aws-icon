@@ -17,3 +17,5 @@ test_call.py
 tests/aws_availability_zones.json
 
 ap-northeast-1
+environment.tfvars
+terraform.tfvars
