@@ -23,7 +23,6 @@ keys {
 security_groups {
   type = "module"
   source = "github.com/robcxyz/terragrunt-root-modules.git//common/keys"
-  //  source = "github.com/{ git_user }/{ repo }.git//{ module_path }"
   dependencies = ["stuff", "things"]
   inputs {
     name = "security_groups"

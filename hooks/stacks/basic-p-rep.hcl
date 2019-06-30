@@ -11,13 +11,17 @@ ebs {
   type = "module"
   source = ""
   dependencies = ["ec2"]
-  inputs {}
+  inputs {
+    name = "ec2"
+  }
 }
 
 logging {
   type = "module"
   source = ""
-  dependencies = ["ec2"]
-  inputs {}
+  dependencies = ["logging"]
+  inputs {
+    name = "logging"
+  }
 }
 

@@ -72,7 +72,7 @@ def test_ask_region(monkeypatch):
     tg = TerragruntGenerator(debug=True)
     tg.ask_region()
     assert tg.regions == ['eu-west-3']
-    assert tg.stack == {0: {'region': 'eu-west-3'}}
+    assert tg.stack == {0: {'region': 'eu-west-3', 'modules': {}}}
 
     # # Multiple inputs
     # inputs = ['n', 'eu-west-2', 'eu-west-3']
@@ -101,7 +101,8 @@ def test_ask_common_modules(monkeypatch):
     inputs = ['', '']
     input_generator = (i for i in inputs)
     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
-    tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1', stack={0: {'modules': {}}})
+    tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1',
+                             stack={0: {'region': 'eu-west-3', 'modules': {}}})
     tg.ask_common_modules()
 
     pprint(tg.stack)

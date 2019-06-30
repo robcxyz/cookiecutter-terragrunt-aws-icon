@@ -13,3 +13,7 @@ terragrunt = {
   }
 }
 {% endif %}
+{% if inputs %}
+{% for k, v in inputs.items() %}
+{{ k }} = {{ v }}{% endfor %}
+{% endif %}

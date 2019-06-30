@@ -9,17 +9,11 @@ vpc {
     enable_dns_hostnames = true
     enable_dns_support = true
   }
-  inputs_environment {
-
-  }
-  region_inputs {
-
-  }
 }
 
-keys {
+keysg {
   type = "module"
-  source = "github.com/robcxyz/terragrunt-root-modules.git//common/keys"
+  source = ""
   dependencies = [""]
   inputs {
     name = "keys"
@@ -28,8 +22,7 @@ keys {
 
 security_groups {
   type = "module"
-  source = "github.com/robcxyz/terragrunt-root-modules.git//common/keys"
-  //  source = "github.com/{ git_user }/{ repo }.git//{ module_path }"
+  source = ""
   dependencies = [""]
   inputs {
     name = "security_groups"

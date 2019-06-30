@@ -58,6 +58,7 @@ class StackParser(object):
                 error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
                 raise ValueError(error_msg)
             if not isinstance(stack_dict[key], val['type']):
+                # print('stack_dict = %s %s') % (str(stack_dict[key]), str(val['type']))
                 error_msg = '%s needs to be of type %s for \'%s\' item' % (key, str(val['type']), k)
                 raise ValueError(error_msg)
 
@@ -141,6 +142,9 @@ class TerragruntGenerator(object):
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
+    def region_init(self):
+        pass
+
     @staticmethod
     def simple_question(question, default=None):
         prompt = '%s:' % (question)
@@ -194,7 +198,7 @@ class TerragruntGenerator(object):
         self.regions.append(region)
         self.region = region
         self.stack[self.r] = {'region': region}
-        self.stack[self.r] = {'modules': {}}
+        self.stack[self.r].update({'modules': {}})
 
     def get_aws_availability_zones(self):
         if not self.got_az_list:
@@ -285,9 +289,9 @@ class TerragruntGenerator(object):
             self.terraform_version = str(12)
             self.terragrunt_file = 'terragrunt.hcl'
 
-        if not self.debug:
-            self.service_template = 'service' + str(self.terraform_version) + '.hcl'
-            self.head_template = 'head' + str(self.terraform_version) + '.hcl'
+        # if not self.debug:
+        self.service_template = 'service' + str(self.terraform_version) + '.hcl'
+        self.head_template = 'head' + str(self.terraform_version) + '.hcl'
 
 
 
@@ -335,7 +339,6 @@ class TerragruntGenerator(object):
             region_modules = self.stack[r]['modules'].keys()
 
             for m in region_modules:
-                print(f'm = {m}, r = {r}')
                 module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
                 os.makedirs(module_path)
                 stack_dict = self.stack[r]['modules'][m]
@@ -377,12 +380,15 @@ class TerragruntGenerator(object):
 if __name__ == '__main__':
 
     # Context
-    cc_trigger = '{{ cookiecutter.environment }}'
-    if cc_trigger == '{{ cookiecutter.environment }}':
-        # shutil.rmtree('ap-northeast-1')
-        tg = TerragruntGenerator(environment='dev', num_regions=1, debug=True)
-        tg.main()
-        print(tg.stack)
-    else:
-        tg = TerragruntGenerator(num_regions='{{ cookiecutter.num_regions }}', debug=False)
-        tg.main()
+    # cc_trigger = '{{ cookiecutter.environment }}'
+    # if cc_trigger == '{{ cookiecutter.environment }}':
+    #     # shutil.rmtree('ap-northeast-1')
+    #     tg = TerragruntGenerator(debug=True)
+    #     tg.main()
+    #     print(tg.stack)
+    # else:
+    #     tg = TerragruntGenerator()
+    #     tg.main()
+
+    tg = TerragruntGenerator()
+    tg.main()
