@@ -285,8 +285,9 @@ class TerragruntGenerator(object):
             self.terraform_version = str(12)
             self.terragrunt_file = 'terragrunt.hcl'
 
-        self.service_template = 'service' + str(self.terraform_version) + '.hcl'
-        self.head_template = 'head' + str(self.terraform_version) + '.hcl'
+        if not self.debug:
+            self.service_template = 'service' + str(self.terraform_version) + '.hcl'
+            self.head_template = 'head' + str(self.terraform_version) + '.hcl'
 
 
 
@@ -334,6 +335,7 @@ class TerragruntGenerator(object):
             region_modules = self.stack[r]['modules'].keys()
 
             for m in region_modules:
+                print(f'm = {m}, r = {r}')
                 module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
                 os.makedirs(module_path)
                 stack_dict = self.stack[r]['modules'][m]
@@ -354,17 +356,17 @@ class TerragruntGenerator(object):
             with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
                 fp.write(rendered_file)
 
-        env_dict = {}  # TODO
-        rendered_file = env.get_template(self.head_template).render(env_dict)
-        # rendered_file = self.service_template.render(env_dict)
-        with open(os.path.join(os.path.curdir, '..', 'environment.tfvars'), 'w') as fp:
-            fp.write(rendered_file)
-
-        head_dict = {}  # TODO
-        rendered_file = env.get_template(self.head_template).render(head_dict)
-        # rendered_file = self.head_template.render(head_dict)
-        with open(os.path.join(os.path.curdir, '..', self.terragrunt_file), 'w') as fp:
-            fp.write(rendered_file)
+        # env_dict = {}  # TODO
+        # rendered_file = env.get_template(self.head_template).render(env_dict)
+        # # rendered_file = self.service_template.render(env_dict)
+        # with open(os.path.join(os.path.curdir, '..', 'environment.tfvars'), 'w') as fp:
+        #     fp.write(rendered_file)
+        #
+        # head_dict = {}  # TODO
+        # rendered_file = env.get_template(self.head_template).render(head_dict)
+        # # rendered_file = self.head_template.render(head_dict)
+        # with open(os.path.join(os.path.curdir, '..', self.terragrunt_file), 'w') as fp:
+        #     fp.write(rendered_file)
 
     def main(self):
         if not self.headless:
@@ -378,7 +380,7 @@ if __name__ == '__main__':
     cc_trigger = '{{ cookiecutter.environment }}'
     if cc_trigger == '{{ cookiecutter.environment }}':
         # shutil.rmtree('ap-northeast-1')
-        tg = TerragruntGenerator(num_regions=1, debug=True)
+        tg = TerragruntGenerator(environment='dev', num_regions=1, debug=True)
         tg.main()
         print(tg.stack)
     else:

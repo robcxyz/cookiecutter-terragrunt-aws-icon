@@ -22,6 +22,7 @@ resource_group = "{{ resource_group }}"
 //{% if v is mapping %}
 //{{ k }} = {% for k2, v2 in v.items() %}
 //  {{ k2 }} = {{ v2 }}
-//{% endfor %}
+{% endfor %}
 //{% endif %}
 {{ k }} = {{ v }}{% endfor %}
+{% endfor %}
