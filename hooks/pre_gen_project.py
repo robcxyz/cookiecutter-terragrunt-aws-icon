@@ -1,3 +1,6 @@
+from __future__ import absolute_import, division, print_function
+from __future__ import unicode_literals
+from builtins import str
 import os
 import json
 import shutil
@@ -41,11 +44,13 @@ class StackParser(object):
 
     @staticmethod
     def _validate_format(k, stack_dict):
+        # {% raw %}
         required_keys = {}
         module_keys = {'dependencies': {'type': list, 'optional': True},
                        'inputs': {'type': dict, 'optional': True},
                        'source': {'type': str, 'optional': False}}
         file_keys = ['']
+        # {% endraw %}
 
         for key in required_keys.items():
             if key not in stack_dict.keys():
@@ -295,20 +300,6 @@ class TerragruntGenerator(object):
         self.head_template = 'head' + str(self.terraform_version) + '.hcl'
 
 
-
-    # def ask_templaetes_dir(self):
-    #     if not self.debug:
-    #         self.terraform_version = self.choice_question('What version of Terraform do you want to use?',
-    #                                                       ['0.11', '0.12'])
-    #     else:
-    #         self.
-    #     if self.terraform_version == '0.11':
-    #         self.terraform_version = str(11)
-    #         self.terragrunt_file = 'terraform.tfvars'
-    #     else:
-    #         self.terraform_version = str(12)
-    #         self.terragrunt_file = 'terragrunt.hcl'
-
     def ask_all(self):
         for r in range(self.num_regions):
             self.r = r
@@ -318,7 +309,9 @@ class TerragruntGenerator(object):
             self.ask_common_modules()
             self.ask_stack_modules()
             self.ask_special_modules()
+            print('the curdir is %s' % __file__)
             self.ask_terragrunt_version()
+
 
     # def init_all(self):
 
@@ -329,11 +322,6 @@ class TerragruntGenerator(object):
     def make_all(self):
 
         env = Environment(loader=FileSystemLoader(self.templates_dir))
-
-        # if not self.debug:
-        #     # Must override in tests
-        #     self.service_template = 'service' + str(self.terraform_version) + '.hcl'
-        #     self.head_template = 'head' + str(self.terraform_version) + '.hcl'
 
         for r in range(self.num_regions):
 
@@ -360,17 +348,17 @@ class TerragruntGenerator(object):
             with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
                 fp.write(rendered_file)
 
-        # env_dict = {}  # TODO
-        # rendered_file = env.get_template(self.head_template).render(env_dict)
-        # # rendered_file = self.service_template.render(env_dict)
-        # with open(os.path.join(os.path.curdir, '..', 'environment.tfvars'), 'w') as fp:
-        #     fp.write(rendered_file)
+        env_dict = {}  # TODO
+        rendered_file = env.get_template(self.head_template).render(env_dict)
+        # rendered_file = self.service_template.render(env_dict)
+        with open(os.path.join(os.path.curdir, '..', 'environment.tfvars'), 'w') as fp:
+            fp.write(rendered_file)
         #
-        # head_dict = {}  # TODO
-        # rendered_file = env.get_template(self.head_template).render(head_dict)
-        # # rendered_file = self.head_template.render(head_dict)
-        # with open(os.path.join(os.path.curdir, '..', self.terragrunt_file), 'w') as fp:
-        #     fp.write(rendered_file)
+        head_dict = {}  # TODO
+        rendered_file = env.get_template(self.head_template).render(head_dict)
+        # rendered_file = self.head_template.render(head_dict)
+        with open(os.path.join(os.path.curdir, '..', self.terragrunt_file), 'w') as fp:
+            fp.write(rendered_file)
 
     def main(self):
         if not self.headless:
@@ -379,17 +367,5 @@ class TerragruntGenerator(object):
 
 
 if __name__ == '__main__':
-
-    # Context
-    # cc_trigger = '{{ cookiecutter.environment }}'
-    # if cc_trigger == '{{ cookiecutter.environment }}':
-    #     # shutil.rmtree('ap-northeast-1')
-    #     tg = TerragruntGenerator(debug=True)
-    #     tg.main()
-    #     print(tg.stack)
-    # else:
-    #     tg = TerragruntGenerator()
-    #     tg.main()
-
-    tg = TerragruntGenerator()
+    tg = TerragruntGenerator(debug=True)
     tg.main()
