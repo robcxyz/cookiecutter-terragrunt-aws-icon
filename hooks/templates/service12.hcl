@@ -15,12 +15,11 @@ dependencies {
     "../{{ i }}"{% endfor %}
 }
 {% endif %}
-inputs = {
-  {% for k, v in inputs.items() %}
-  {% if v is mapping %}
-  {{ k }} = {% for k2, v2 in v.items() %}
-    {{ k2 }} = {{ v2 }}
-  {% endfor %}
-  {% endif %}
-  {{ k }} = {{ v }}{% endfor %}
-}
+{% if inputs %}inputs = {
+  {% for k, v in inputs.items() %}{% if v is mapping %}
+  {{ k }} = {{ "{" }} {% for k2, v2 in v.items() %}
+    {{ k2 }} = "{{ v2 }}"{% endfor %}
+  {{ "}" }}
+{% else %}
+  {{ k }} = "{{ v }}"{% endif %}{% endfor %}
+}{% endif %}

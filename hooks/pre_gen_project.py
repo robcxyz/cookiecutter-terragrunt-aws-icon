@@ -3,11 +3,14 @@ from __future__ import unicode_literals
 from builtins import str
 import os
 import json
+import logging
 import shutil
 
 import boto3
 import hcl
 from jinja2 import Environment, FileSystemLoader
+
+logger = logging.getLogger(__name__)
 
 REGIONS = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ca-central-1',
            'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 'eu-west-3']
@@ -46,10 +49,14 @@ class StackParser(object):
     def _validate_format(k, stack_dict):
         # {% raw %}
         required_keys = {}
-        module_keys = {'dependencies': {'type': list, 'optional': True},
-                       'inputs': {'type': dict, 'optional': True},
-                       'source': {'type': str, 'optional': False}}
-        file_keys = ['']
+        module_keys = {
+            'source': {'type': str, 'optional': False},
+            'dependencies': {'type': list, 'optional': True},
+            'inputs': {'type': dict, 'optional': True},
+            'env_inputs': {'type': dict, 'optional': True},
+            'region_inputs': {'type': dict, 'optional': True},
+        }
+        file_keys = {}
         # {% endraw %}
 
         for key in required_keys.items():
@@ -70,13 +77,16 @@ class StackParser(object):
 
         # TODO: RM for files?  Need to update 'type' condition...
         # if dict['type'] == 'file':
-        # for key in file_keys:
+        #     for key in file_keys:
         #         if key not in dict.keys():
         #             error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
         #             raise ValueError(error_msg)
-        # else:
-        #     error_msg = 'Unrecognized type for \'%s\' item' % (k)
-        #     raise ValueError(error_msg)
+        #     else:
+        #         error_msg = 'Unrecognized type for \'%s\' item' % (k)
+        #         raise ValueError(error_msg)
+
+    # @property
+    # def
 
     def main(self):
         self.stack = {'modules': {}, 'files': {}}
@@ -249,11 +259,14 @@ class TerragruntGenerator(object):
         self.use_common_modules = self.choice_question('Would you like to use common modules', ['y', 'n'])
 
         if self.use_common_modules == 'y':
-            with open(os.path.join(self.stacks_dir, 'common.hcl'), 'r') as f:
-                self.common_modules = hcl.load(f)
-            # self.stack[self.r]['modules'] = StackParser(self.common_modules).stack['modules']
-            modules = StackParser(self.common_modules).stack['modules']
-            self.stack[self.r]['modules'].update(modules)
+            try:
+                with open(os.path.join(self.stacks_dir, 'common.hcl'), 'r') as f:
+                    self.common_modules = hcl.load(f)
+                # self.stack[self.r]['modules'] = StackParser(self.common_modules).stack['modules']
+                modules = StackParser(self.common_modules).stack['modules']
+                self.stack[self.r]['modules'].update(modules)
+            except:
+                raise ValueError('Could not read common modules, invalid format')
 
     def ask_stack_modules(self):
 
@@ -287,7 +300,7 @@ class TerragruntGenerator(object):
     def ask_terragrunt_version(self):
         if not self.headless:
             self.terraform_version = self.choice_question('What version of Terraform do you want to use?',
-                                                          ['0.11', '0.12'])
+                                                          ['0.12', '0.11'])
         if self.terraform_version == '0.11':
             self.terraform_version = str(11)
             self.terragrunt_file = 'terraform.tfvars'
@@ -298,7 +311,6 @@ class TerragruntGenerator(object):
         # if not self.debug:
         self.service_template = 'service' + str(self.terraform_version) + '.hcl'
         self.head_template = 'head' + str(self.terraform_version) + '.hcl'
-
 
     def ask_all(self):
         for r in range(self.num_regions):
@@ -312,15 +324,23 @@ class TerragruntGenerator(object):
             print('the curdir is %s' % __file__)
             self.ask_terragrunt_version()
 
-
     # def init_all(self):
 
     @staticmethod
     def render_file():
         pass
 
-    def make_all(self):
+    def make_env(self):
+        pass
 
+    def make_region(self, env, r):
+        region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'])
+        region_dict = {}  # TODO
+        rendered_file = env.get_template(self.service_template).render(region_dict)
+        with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
+            fp.write(rendered_file)
+
+    def make_all(self):
         env = Environment(loader=FileSystemLoader(self.templates_dir))
 
         for r in range(self.num_regions):
@@ -334,6 +354,8 @@ class TerragruntGenerator(object):
 
                 stack_dict.update({'is_service': True})  # TODO: This needs to be pulled out in the headless...
 
+
+
                 env_tpl = env.get_template(self.service_template)
                 rendered_file = env_tpl.render(stack_dict)
                 # rendered_file = self.service_template.render(stack_dict)
@@ -341,15 +363,10 @@ class TerragruntGenerator(object):
                     fp.write(rendered_file)
 
             # Make the path first
-            region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'])
-            region_dict = {}  # TODO
-            rendered_file = env.get_template(self.service_template).render(region_dict)
-            # rendered_file = self.service_template.render(region_dict)
-            with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
-                fp.write(rendered_file)
+            self.make_region(env, r)
 
-        env_dict = {}  # TODO
-        rendered_file = env.get_template(self.head_template).render(env_dict)
+        env_dict = {'is_service': False}  # TODO
+        rendered_file = env.get_template(self.service_template).render(env_dict)
         # rendered_file = self.service_template.render(env_dict)
         with open(os.path.join(os.path.curdir, 'environment.tfvars'), 'w') as fp:
             fp.write(rendered_file)
@@ -367,5 +384,5 @@ class TerragruntGenerator(object):
 
 
 if __name__ == '__main__':
-    tg = TerragruntGenerator(debug=True)
+    tg = TerragruntGenerator(debug=False)
     tg.main()

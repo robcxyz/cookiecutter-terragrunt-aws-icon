@@ -133,11 +133,11 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
                     print(os.listdir(os.path.join(p)))
                     raise UndefinedError
             elif service_invalid:
-                with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError, UndefinedError)):
+                with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
                     print(f'Service file = {tg.service_template} is invalid ')
                     tg.make_all()
             else:
-                with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError, UndefinedError)):
+                with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
                     print(f'Head file = {tg.head_template} is invalid ')
                     tg.make_all()
         else:
