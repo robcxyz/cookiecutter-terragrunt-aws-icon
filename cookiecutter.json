@@ -1,5 +1,6 @@
 {
   "stack_name": "app",
   "environment": "dev",
-  "num_regions": 1
+  "num_regions": 1,
+  "cidr": "10.0.0.0/16"
 }

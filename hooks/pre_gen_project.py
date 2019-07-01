@@ -11,6 +11,8 @@ import boto3
 import hcl
 from jinja2 import Environment, FileSystemLoader
 
+from pprint import pprint
+
 logger = logging.getLogger(__name__)
 
 REGIONS = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ca-central-1',
@@ -43,59 +45,61 @@ class StackParser(object):
     def __init__(self, hcl_dict):
         self.hcl_dict = hcl_dict
         self.stack = {}
+        self.required_keys = {}
+        self.module_keys = {
+            'source': {'type': str, 'optional': False, 'target': 'modules'},
+            'dependencies': {'type': list, 'optional': True, 'target': 'modules'},
+            'inputs': {'type': dict, 'optional': True, 'target': 'modules'},
+            'env_inputs': {'type': dict, 'optional': True, 'target': 'vars_env'},
+            'region_inputs': {'type': dict, 'optional': True, 'target': 'vars_region'},
+        }
+        self.file_keys = {}
 
+        self.stack = {'modules': {}, 'files': {}, 'vars_env': {}, 'vars_region': {}}
         self.main()
 
-    @staticmethod
-    def _validate_format(k, stack_dict):
+    def _validate_format(self, k, stack_dict):
         # {% raw %}
-        required_keys = {}
-        module_keys = {
-            'source': {'type': str, 'optional': False},
-            'dependencies': {'type': list, 'optional': True},
-            'inputs': {'type': dict, 'optional': True},
-            'env_inputs': {'type': dict, 'optional': True},
-            'region_inputs': {'type': dict, 'optional': True},
-        }
-        file_keys = {}
         # {% endraw %}
-
-        for key in required_keys.items():
+        for key in self.required_keys.items():
             if key not in stack_dict.keys():
                 error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+                print(error_msg)
                 raise ValueError(error_msg)
 
         # if dict['type'] == 'module':
-        for key, val in module_keys.items():
+        for key, val in self.module_keys.items():
             if not val['optional']:
                 if key not in stack_dict.keys():
                     error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
+                    print(error_msg)
                     raise ValueError(error_msg)
                 if not isinstance(stack_dict[key], val['type']):
                     # print('stack_dict = %s %s') % (str(stack_dict[key]), str(val['type']))
                     error_msg = '%s needs to be of type %s for \'%s\' item' % (key, str(val['type']), k)
+                    print(error_msg)
                     raise ValueError(error_msg)
-
-        # TODO: RM for files?  Need to update 'type' condition...
-        # if dict['type'] == 'file':
-        #     for key in file_keys:
-        #         if key not in dict.keys():
-        #             error_msg = 'Need to set \'%s\' key for \'%s\' item' % (key, k)
-        #             raise ValueError(error_msg)
-        #     else:
-        #         error_msg = 'Unrecognized type for \'%s\' item' % (k)
-        #         raise ValueError(error_msg)
-
-    # @property
-    # def
+            if val['optional']:
+                if key in stack_dict.keys():
+                    if not isinstance(stack_dict[key], val['type']):
+                        # print('stack_dict = %s %s') % (str(stack_dict[key]), str(val['type']))
+                        error_msg = '%s needs to be of type %s for \'%s\' item' % (key, str(val['type']), k)
+                        print(error_msg)
+                        raise ValueError(error_msg)
 
     def main(self):
-        self.stack = {'modules': {}, 'files': {}}
+
         for k, v in self.hcl_dict.items():
             self._validate_format(k, v)
             if v['type'] == 'module':
                 # self.stack['modules'][k].update(v)
-                self.stack['modules'][k] = v
+                self.stack['modules'].update({k: {'source': v['source']}})
+                for i in [opt for opt in self.module_keys.items() if opt[1]['optional']]:
+                    if i[0] in v.keys() and i[1]['target'] == 'modules':
+                        self.stack['modules'].update({k: {'source': v[i[0]]}})
+                    elif i[0] in v.keys() and i[1]['target'] != 'modules':
+                        self.stack[i[1]['target']].update({i[0]: v[i[0]]})
+
         return self.stack
 
 
@@ -132,7 +136,12 @@ class TerragruntGenerator(object):
         self.use_common_modules = None
         self.available_azs = None
 
+        self.num_vpcs = 1
+        self.num_subnets = 2
+        self.subnet_names = None
+
         self.common_modules = {}
+        self.common_template = 'common.hcl'
 
         self.use_stack_modules = None
         self.stack_names = []
@@ -142,15 +151,15 @@ class TerragruntGenerator(object):
         self.use_special_modules = None
         self.special_modules_location = None
 
-        self.tpl_env = None
-        self.stack_env = None
-        self.service_template = None
-        self.head_template = None
-
         self.forked_repo = 'n'
         self.already_forked = False
         self.git_user = 'robcxyz'
         self.repo = 'terragrunt-modules-'
+
+        self.tpl_env = None
+        self.stack_env = None
+        self.service_template = None
+        self.head_template = None
 
         for d in args:
             for key in d:
@@ -232,8 +241,9 @@ class TerragruntGenerator(object):
         self.num_azs = self.choice_question('How many availability zones?',
                                             [1, 2, 3, 4, 5, 6, 7, 'max'])
         # Validate
-        if self.num_azs > len(self.available_azs[self.region]):
-            raise ValueError('Entered too many availability zones')
+        if self.num_azs != 'max':
+            if int(self.num_azs) > len(self.available_azs[self.region]):
+                raise ValueError('Entered too many availability zones')
         if self.num_azs != 1:
             self.ha = True
         # Set
@@ -243,6 +253,13 @@ class TerragruntGenerator(object):
         else:
             self.num_azs = int(self.num_azs)
             self.availability_zones = self.available_azs[self.region][0:self.num_azs]
+
+    def ask_networking(self):
+        # TODO: Get rid of this?
+        # self.num_vpcs = self.simple_question('How many vpcs?', [1, 2, 3, 4])
+        # self.num_subnets = self.simple_question('How many subnets?', [2, 3, 4, 5])
+        self.subnet_names = ['private_subnets', 'public_subnets', 'database_subnets',
+                             'elasticache_subnets', 'redshift_subnets', 'infra_subnets'][0:self.num_subnets]
 
     def module_ask_module_location(self):
         # TODO:
@@ -263,17 +280,17 @@ class TerragruntGenerator(object):
 
     def ask_common_modules(self):
         self.use_common_modules = self.choice_question('Would you like to use common modules', ['y', 'n'])
-
         if self.use_common_modules == 'y':
             try:
-
-                with open(os.path.join(self.stacks_dir, 'common.hcl'), 'r') as f:
-                    self.common_modules = hcl.load(f)
-                # self.stack[self.r]['modules'] = StackParser(self.common_modules).stack['modules']
+                common_dict = {}
+                common_str = self.stack_env.get_template(self.common_template).render(common_dict)
+                self.common_modules = hcl.loads(common_str)
                 modules = StackParser(self.common_modules).stack['modules']
                 self.stack[self.r]['modules'].update(modules)
             except:
-                raise ValueError('Could not read common modules, invalid format')
+                err_msg = 'Could not read common modules, invalid format'
+                print(err_msg)
+                raise ValueError(err_msg)
 
     def ask_stack_modules(self):
 
@@ -282,6 +299,7 @@ class TerragruntGenerator(object):
             stack_options = ['basic-p-rep', 'decoupled-p-rep', 'data-science', 'data-engineering-hadoop']
             self.stack_type = self.choice_question('What type of stack are you building?\n', stack_options)
             # TODO: Perhaps qualify the options first or allow for alternative input
+
             with open(os.path.join(self.stacks_dir, str(self.stack_type) + '.hcl')) as f:
                 self.stack_modules = hcl.load(f)
             self.stack[self.r]['modules'].update(StackParser(self.stack_modules).stack['modules'])
@@ -321,6 +339,7 @@ class TerragruntGenerator(object):
 
     def ask_all(self):
         for r in range(self.num_regions):
+            self.get_stack_env()
             self.r = r
             self.ask_region()
             self.stack[self.r] = {'region': self.region, 'modules': {}, 'files': {}}
@@ -380,11 +399,12 @@ class TerragruntGenerator(object):
         self.tpl_env = Environment(loader=FileSystemLoader(self.templates_dir))  # Separate for testing purposes
 
     def get_stack_env(self):
+        # TODO: This is perhaps where you would want to put in functionality to do custom imports
         self.stack_env = Environment(loader=FileSystemLoader(self.stacks_dir))  # Separate for testing purposes
 
     def make_all(self):
         self.get_tpl_env()
-        self.get_stack_env()
+
         # Make the path first
         self.make_modules()
         self.make_region()

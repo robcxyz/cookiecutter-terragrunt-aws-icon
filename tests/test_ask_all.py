@@ -2,6 +2,8 @@
 import os
 import pytest
 
+from jinja2.exceptions import UndefinedError, TemplateSyntaxError
+
 from hooks.pre_gen_project import TerragruntGenerator
 
 from pprint import pprint
@@ -96,14 +98,33 @@ def test_ask_availability_zones(monkeypatch):
     assert tg.num_azs == 3
 
 
-def test_ask_common_modules(monkeypatch):
+COMMON_FIXTURES = [
+    (
+        "common.hcl",
+        False,
+    ),
+    (
+        "bad-common.hcl",
+        True,
+    )
+]
+
+@pytest.mark.parametrize("hcl_fname,invalid", COMMON_FIXTURES)
+def test_ask_common_modules(hcl_fname, invalid, monkeypatch):
     # Single region
     inputs = ['', '']
     input_generator = (i for i in inputs)
     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
     tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1',
-                             stack={0: {'region': 'eu-west-3', 'modules': {}}})
-    tg.ask_common_modules()
+                             stack={0: {'region': 'eu-west-3', 'modules': {}}, 'region_inputs': {}})
+    tg.stacks_dir = os.path.join(os.path.abspath(os.path.curdir), 'stacks')
+    tg.common_template = hcl_fname
+    tg.get_stack_env()
+    if not invalid:
+        tg.ask_common_modules()
+    else:
+        with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
+            tg.ask_common_modules()
 
     pprint(tg.stack)
     # assert tg.stack == 3
