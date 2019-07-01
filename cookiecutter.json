@@ -1,4 +1,5 @@
 {
+  "stack_name": "app",
   "environment": "dev",
   "num_regions": 1
 }

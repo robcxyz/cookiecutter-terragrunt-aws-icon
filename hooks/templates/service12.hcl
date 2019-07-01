@@ -10,10 +10,12 @@ terraform {
 include {
   path = find_in_parent_folders()
 }
+{% if dependencies %}
 dependencies {
-    paths = [{% for i in dependencies %}
-    "../{{ i }}"{% endfor %}
-}
+  paths = [{% for i in dependencies %}
+  "../{{ i }}"{% if not loop.last %},{% endif %}{% endfor %}
+  ]
+}{% endif %}
 {% endif %}
 {% if inputs %}inputs = {
   {% for k, v in inputs.items() %}{% if v is mapping %}

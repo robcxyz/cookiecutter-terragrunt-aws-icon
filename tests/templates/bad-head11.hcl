@@ -45,3 +45,4 @@ terragrunt = {
   }
 
 {% endfor %}
+{ wtfixture }

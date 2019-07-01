@@ -71,10 +71,10 @@ SERVICE_FIXTURES = [
 # TODO: RM all this once 11 is completely gone
 VERSION_FIXTURES = [
     (
-        "0.11",
+        "0.12",
     ),
     (
-        "0.12",
+        "0.11",
     )
 ]
 
@@ -98,7 +98,7 @@ def test_stack_parser(hcl_fname, invalid):
 @pytest.mark.parametrize("head_file,head_invalid", HEAD_FIXTURES)
 @pytest.mark.parametrize("version", VERSION_FIXTURES)
 def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head_file, head_invalid, version,
-                  tmpdir, monkeypatch):
+                  tmpdir):
     # inputs = ['']
     # input_generator = (i for i in inputs)
     # monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
@@ -125,9 +125,13 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
                 tg.make_all()
 
                 if int(tg.terraform_version) == 12:
-                    assert os.listdir(p) == ['ap-northeast-1', 'environment.tfvars', 'terragrunt.hcl']
-                elif int(tg.terraform_version) == 11:
-                    assert os.listdir(p) == ['ap-northeast-1', 'environment.tfvars', 'terraform.tfvars']
+                    print(os.listdir())
+                    assert os.listdir(p) == sorted(['ap-northeast-1', 'environment.tfvars',
+                                                    'terragrunt.hcl', 'clear-cache.sh'])
+                # elif int(tg.terraform_version) == 11:
+                #     print(os.listdir())
+                #     assert os.listdir(p) == sorted(['ap-northeast-1', 'environment.tfvars',
+                #                                     'terraform.tfvars', 'clear-cache.sh'])
                 else:
                     print(tg.terraform_version)
                     print(os.listdir(os.path.join(p)))
@@ -139,7 +143,8 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
             else:
                 with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
                     print(f'Head file = {tg.head_template} is invalid ')
-                    tg.make_all()
+                    tg.get_env()
+                    tg.make_head()
         else:
             with pytest.raises((ValueError, KeyError)):
                 tg.make_all()

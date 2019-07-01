@@ -321,28 +321,13 @@ class TerragruntGenerator(object):
             self.ask_common_modules()
             self.ask_stack_modules()
             self.ask_special_modules()
-            print('the curdir is %s' % __file__)
             self.ask_terragrunt_version()
-
-    # def init_all(self):
 
     @staticmethod
     def render_file():
         pass
 
-    def make_env(self):
-        pass
-
-    def make_region(self, env, r):
-        region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'])
-        region_dict = {}  # TODO
-        rendered_file = env.get_template(self.service_template).render(region_dict)
-        with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
-            fp.write(rendered_file)
-
-    def make_all(self):
-        env = Environment(loader=FileSystemLoader(self.templates_dir))
-
+    def make_region(self):
         for r in range(self.num_regions):
 
             region_modules = self.stack[r]['modules'].keys()
@@ -354,28 +339,44 @@ class TerragruntGenerator(object):
 
                 stack_dict.update({'is_service': True})  # TODO: This needs to be pulled out in the headless...
 
-
-
-                env_tpl = env.get_template(self.service_template)
+                env_tpl = self.env.get_template(self.service_template)
                 rendered_file = env_tpl.render(stack_dict)
-                # rendered_file = self.service_template.render(stack_dict)
                 with open(os.path.join(module_path, self.terragrunt_file), 'w') as fp:
                     fp.write(rendered_file)
+            region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'])
+            region_dict = {'is_service': False}  # TODO
+            rendered_file = self.env.get_template(self.service_template).render(region_dict)
+            with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
+                fp.write(rendered_file)
 
-            # Make the path first
-            self.make_region(env, r)
-
+    def make_env(self):
         env_dict = {'is_service': False}  # TODO
-        rendered_file = env.get_template(self.service_template).render(env_dict)
-        # rendered_file = self.service_template.render(env_dict)
+        rendered_file = self.env.get_template(self.service_template).render(env_dict)
         with open(os.path.join(os.path.curdir, 'environment.tfvars'), 'w') as fp:
             fp.write(rendered_file)
-        #
-        head_dict = {}  # TODO
-        rendered_file = env.get_template(self.head_template).render(head_dict)
-        # rendered_file = self.head_template.render(head_dict)
+
+    def make_head(self):
+        env_dict = {'is_service': False}  # TODO
+
+        rendered_file = self.env.get_template(self.service_template).render(env_dict)
         with open(os.path.join(os.path.curdir, self.terragrunt_file), 'w') as fp:
             fp.write(rendered_file)
+
+    def make_other(self):
+        rendered_file = self.env.get_template('clear-cache.sh.tpl').render(regions=self.regions)
+        with open(os.path.join(os.path.curdir, 'clear-cache.sh'), 'w') as fp:
+            fp.write(rendered_file)
+
+    def get_env(self):
+        self.env = Environment(loader=FileSystemLoader(self.templates_dir))
+
+    def make_all(self):
+        self.get_env()
+        # Make the path first
+        self.make_region()
+        self.make_env()
+        self.make_head()
+        self.make_other()
 
     def main(self):
         if not self.headless:
