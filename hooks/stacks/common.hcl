@@ -7,6 +7,13 @@ vpc {
     single_nat_gateway = "false"
     enable_dns_hostnames = "true"
     enable_dns_support = "true"
+    cidr = "10.0.0.0/16"
+  }
+  region_inputs {
+    azs = ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+    private_subnets = ["10.0.0.0/20", "10.0.16.0/20", "10.0.32.0/20"]
+    public_subnets = ["10.0.64.0/20", "10.0.80.0/20", "10.0.96.0/20"]
   }
 }
 

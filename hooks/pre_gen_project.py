@@ -4,6 +4,7 @@ from builtins import str
 import os
 import json
 import logging
+import ipaddress
 import shutil
 
 import boto3
@@ -122,6 +123,7 @@ class TerragruntGenerator(object):
         self.rebuild_availability_zones = None
         self.region = None
         self.regions = []
+        self.region_num = None
         self.possible_regions = None
         self.num_azs = None
 
@@ -139,6 +141,7 @@ class TerragruntGenerator(object):
         self.use_special_modules = None
         self.special_modules_location = None
 
+        self.env = None
         self.service_template = None
         self.head_template = None
 
@@ -319,13 +322,12 @@ class TerragruntGenerator(object):
             self.ask_special_modules()
             self.ask_terragrunt_version()
 
-    @staticmethod
-    def render_file():
+    def make_azs(self):
         pass
 
-    def make_region(self):
+    def make_modules(self):
         for r in range(self.num_regions):
-
+            self.region_num = r
             region_modules = self.stack[r]['modules'].keys()
 
             for m in region_modules:
@@ -339,11 +341,14 @@ class TerragruntGenerator(object):
                 rendered_file = env_tpl.render(stack_dict)
                 with open(os.path.join(module_path, self.terragrunt_file), 'w') as fp:
                     fp.write(rendered_file)
-            region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'])
-            region_dict = {'is_service': False}  # TODO
-            rendered_file = self.env.get_template(self.service_template).render(region_dict)
-            with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
-                fp.write(rendered_file)
+
+    def make_region(self):
+        region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[self.region_num]['region'])
+
+        region_dict = {'is_service': False}  # TODO
+        rendered_file = self.env.get_template(self.service_template).render(region_dict)
+        with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
+            fp.write(rendered_file)
 
     def make_env(self):
         env_dict = {'is_service': False}  # TODO
@@ -364,11 +369,12 @@ class TerragruntGenerator(object):
             fp.write(rendered_file)
 
     def get_env(self):
-        self.env = Environment(loader=FileSystemLoader(self.templates_dir))
+        self.env = Environment(loader=FileSystemLoader(self.templates_dir))  # Separate for testing purposes
 
     def make_all(self):
         self.get_env()
         # Make the path first
+        self.make_modules()
         self.make_region()
         self.make_env()
         self.make_head()
