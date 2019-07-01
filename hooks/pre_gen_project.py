@@ -358,7 +358,7 @@ class TerragruntGenerator(object):
     def make_head(self):
         env_dict = {'is_service': False}  # TODO
 
-        rendered_file = self.env.get_template(self.service_template).render(env_dict)
+        rendered_file = self.env.get_template(self.head_template).render(env_dict)
         with open(os.path.join(os.path.curdir, self.terragrunt_file), 'w') as fp:
             fp.write(rendered_file)
 

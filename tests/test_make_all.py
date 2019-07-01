@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+from __future__ import unicode_literals
+
 import os
 import pytest
 import hcl
@@ -69,13 +72,16 @@ SERVICE_FIXTURES = [
 ]
 
 # TODO: RM all this once 11 is completely gone
+# VERSION_FIXTURES = [
+#     (
+#         "0.12",
+#     ),
+#     (
+#         "0.11",
+#     )
+# ]
 VERSION_FIXTURES = [
-    (
-        "0.12",
-    ),
-    (
-        "0.11",
-    )
+    "0.12", "0.11"
 ]
 
 
@@ -125,28 +131,40 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
                 tg.make_all()
 
                 if int(tg.terraform_version) == 12:
-                    print(os.listdir())
+                    print(f'version = {version}')
+                    print(os.listdir(p))
                     assert os.listdir(p) == sorted(['ap-northeast-1', 'environment.tfvars',
                                                     'terragrunt.hcl', 'clear-cache.sh'])
-                # elif int(tg.terraform_version) == 11:
-                #     print(os.listdir())
-                #     assert os.listdir(p) == sorted(['ap-northeast-1', 'environment.tfvars',
-                #                                     'terraform.tfvars', 'clear-cache.sh'])
+                elif int(tg.terraform_version) == 11:
+                    print(f'version = {version}')
+                    print(os.listdir(p))
+                    print(open(os.path.join(p, 'terraform.tfvars')))
+                    assert sorted(os.listdir(p)) == sorted(['ap-northeast-1', 'environment.tfvars',
+                                                            'terraform.tfvars', 'clear-cache.sh'])
+
                 else:
                     print(tg.terraform_version)
                     print(os.listdir(os.path.join(p)))
                     raise UndefinedError
-            elif service_invalid:
+            elif service_invalid and not head_invalid:
                 with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
+                    print(f'version = {version}')
                     print(f'Service file = {tg.service_template} is invalid ')
                     tg.make_all()
-            else:
+            elif head_invalid and not service_invalid:
                 with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
-                    print(f'Head file = {tg.head_template} is invalid ')
+                    print(f'version = {version}')
+                    print(f'Service file = {tg.service_template} is {service_invalid}' +
+                          f' and Head file = {tg.head_template} is {head_invalid}')
                     tg.get_env()
                     tg.make_head()
+            elif head_invalid and service_invalid:
+                with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
+                    print(f'version = {version}')
+                    print(f'Service file = {tg.service_template} is {service_invalid}' +
+                          f' and Head file = {tg.head_template} is {head_invalid}')
+                    tg.make_all()
+
         else:
             with pytest.raises((ValueError, KeyError)):
                 tg.make_all()
-
-
