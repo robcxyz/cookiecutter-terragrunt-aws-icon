@@ -118,11 +118,6 @@ class TerragruntGenerator(object):
             self.num_regions = int('{{ cookiecutter.num_regions }}')
         self.r = 0  # Region counter
 
-        if self.num_regions > 1:
-            self.ha = True
-        else:
-            self.ha = False
-
         self.got_az_list = False
         self.rebuild_availability_zones = None
         self.region = None
@@ -206,12 +201,12 @@ class TerragruntGenerator(object):
 
     def ask_region(self):
         self.get_aws_availability_zones()
-        self.possible_regions = self.availability_zones.keys()
         region = self.choice_question('Enter region number %d to deploy into? \n' % (self.r + 1),
                                       list(self.possible_regions))
         if region in self.regions:
             raise ValueError('Entered duplicate regions - exiting')
         self.regions.append(region)
+        self.possible_regions.remove(region)
         self.region = region
         self.stack[self.r] = {'region': region}
         self.stack[self.r].update({'modules': {}})
@@ -225,6 +220,7 @@ class TerragruntGenerator(object):
                 write_availability_zones()
             with open(os.path.join(self.stacks_dir, '..', 'aws_availability_zones.json'), 'r') as f:
                 self.availability_zones = json.load(f)
+            self.possible_regions = list(self.availability_zones.keys())
             self.got_az_list = True
 
     def ask_availability_zones(self):
@@ -385,5 +381,5 @@ class TerragruntGenerator(object):
 
 
 if __name__ == '__main__':
-    tg = TerragruntGenerator(debug=False)
+    tg = TerragruntGenerator(debug=True, num_regions=2)
     tg.main()

@@ -71,15 +71,6 @@ SERVICE_FIXTURES = [
     )
 ]
 
-# TODO: RM all this once 11 is completely gone
-# VERSION_FIXTURES = [
-#     (
-#         "0.12",
-#     ),
-#     (
-#         "0.11",
-#     )
-# ]
 VERSION_FIXTURES = [
     "0.12", "0.11"
 ]
@@ -146,6 +137,7 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
                     print(tg.terraform_version)
                     print(os.listdir(os.path.join(p)))
                     raise UndefinedError
+            # Check that errors are raised
             elif service_invalid and not head_invalid:
                 with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
                     print(f'version = {version}')
