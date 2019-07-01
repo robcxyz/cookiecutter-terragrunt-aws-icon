@@ -113,7 +113,6 @@ class TerragruntGenerator(object):
         if self.debug:
             self.environment = environment
             self.num_regions = num_regions
-
         else:
             self.environment = '{{ cookiecutter.environment }}'
             self.num_regions = int('{{ cookiecutter.num_regions }}')
@@ -126,10 +125,12 @@ class TerragruntGenerator(object):
         self.region_num = None
         self.possible_regions = None
         self.num_azs = None
+        self.ha = False
+        self.availability_zones = None
 
         self.stack = {}
         self.use_common_modules = None
-        self.availability_zones = None
+        self.available_azs = None
 
         self.common_modules = {}
 
@@ -141,7 +142,8 @@ class TerragruntGenerator(object):
         self.use_special_modules = None
         self.special_modules_location = None
 
-        self.env = None
+        self.tpl_env = None
+        self.stack_env = None
         self.service_template = None
         self.head_template = None
 
@@ -222,20 +224,25 @@ class TerragruntGenerator(object):
             if self.rebuild_availability_zones == 'y':
                 write_availability_zones()
             with open(os.path.join(self.stacks_dir, '..', 'aws_availability_zones.json'), 'r') as f:
-                self.availability_zones = json.load(f)
-            self.possible_regions = list(self.availability_zones.keys())
+                self.available_azs = json.load(f)
+            self.possible_regions = list(self.available_azs.keys())
             self.got_az_list = True
 
     def ask_availability_zones(self):
-
         self.num_azs = self.choice_question('How many availability zones?',
                                             [1, 2, 3, 4, 5, 6, 7, 'max'])
+        # Validate
+        if self.num_azs > len(self.available_azs[self.region]):
+            raise ValueError('Entered too many availability zones')
+        if self.num_azs != 1:
+            self.ha = True
+        # Set
         if self.num_azs == 'max':
-            self.num_azs = len(self.availability_zones[self.region])
+            self.num_azs = len(self.available_azs[self.region])
+            self.availability_zones = self.available_azs[self.region]
         else:
             self.num_azs = int(self.num_azs)
-        if self.num_azs > len(self.availability_zones[self.region]):
-            raise ValueError('Entered too many availability zones')
+            self.availability_zones = self.available_azs[self.region][0:self.num_azs]
 
     def module_ask_module_location(self):
         # TODO:
@@ -259,6 +266,7 @@ class TerragruntGenerator(object):
 
         if self.use_common_modules == 'y':
             try:
+
                 with open(os.path.join(self.stacks_dir, 'common.hcl'), 'r') as f:
                     self.common_modules = hcl.load(f)
                 # self.stack[self.r]['modules'] = StackParser(self.common_modules).stack['modules']
@@ -337,7 +345,7 @@ class TerragruntGenerator(object):
 
                 stack_dict.update({'is_service': True})  # TODO: This needs to be pulled out in the headless...
 
-                env_tpl = self.env.get_template(self.service_template)
+                env_tpl = self.tpl_env.get_template(self.service_template)
                 rendered_file = env_tpl.render(stack_dict)
                 with open(os.path.join(module_path, self.terragrunt_file), 'w') as fp:
                     fp.write(rendered_file)
@@ -346,33 +354,37 @@ class TerragruntGenerator(object):
         region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[self.region_num]['region'])
 
         region_dict = {'is_service': False}  # TODO
-        rendered_file = self.env.get_template(self.service_template).render(region_dict)
+        rendered_file = self.tpl_env.get_template(self.service_template).render(region_dict)
         with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
             fp.write(rendered_file)
 
     def make_env(self):
         env_dict = {'is_service': False}  # TODO
-        rendered_file = self.env.get_template(self.service_template).render(env_dict)
+        rendered_file = self.tpl_env.get_template(self.service_template).render(env_dict)
         with open(os.path.join(os.path.curdir, 'environment.tfvars'), 'w') as fp:
             fp.write(rendered_file)
 
     def make_head(self):
         env_dict = {'is_service': False}  # TODO
 
-        rendered_file = self.env.get_template(self.head_template).render(env_dict)
+        rendered_file = self.tpl_env.get_template(self.head_template).render(env_dict)
         with open(os.path.join(os.path.curdir, self.terragrunt_file), 'w') as fp:
             fp.write(rendered_file)
 
     def make_other(self):
-        rendered_file = self.env.get_template('clear-cache.sh.tpl').render(regions=self.regions)
+        rendered_file = self.tpl_env.get_template('clear-cache.sh.tpl').render(regions=self.regions)
         with open(os.path.join(os.path.curdir, 'clear-cache.sh'), 'w') as fp:
             fp.write(rendered_file)
 
-    def get_env(self):
-        self.env = Environment(loader=FileSystemLoader(self.templates_dir))  # Separate for testing purposes
+    def get_tpl_env(self):
+        self.tpl_env = Environment(loader=FileSystemLoader(self.templates_dir))  # Separate for testing purposes
+
+    def get_stack_env(self):
+        self.stack_env = Environment(loader=FileSystemLoader(self.stacks_dir))  # Separate for testing purposes
 
     def make_all(self):
-        self.get_env()
+        self.get_tpl_env()
+        self.get_stack_env()
         # Make the path first
         self.make_modules()
         self.make_region()

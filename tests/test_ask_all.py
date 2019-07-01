@@ -39,7 +39,7 @@ def test_get_aws_availability_zones(monkeypatch, tmpdir):
     monkeypatch.setattr('builtins.input', lambda x: "n")
     tg = TerragruntGenerator(debug=True)
     tg.get_aws_availability_zones()
-    assert len(tg.availability_zones['ap-northeast-1']) == 3
+    assert len(tg.available_azs['ap-northeast-1']) == 3
 
     # This works but takes 15 seconds...
     # TODO: Put in tmp dir

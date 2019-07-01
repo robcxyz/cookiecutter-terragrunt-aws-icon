@@ -148,7 +148,7 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
                     print(f'version = {version}')
                     print(f'Service file = {tg.service_template} is {service_invalid}' +
                           f' and Head file = {tg.head_template} is {head_invalid}')
-                    tg.get_env()
+                    tg.get_tpl_env()
                     tg.make_head()
             elif head_invalid and service_invalid:
                 with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
