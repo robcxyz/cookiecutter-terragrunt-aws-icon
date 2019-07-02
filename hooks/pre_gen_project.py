@@ -142,6 +142,10 @@ class TerragruntGenerator(object):
         self.num_subnets = 2
         self.subnet_names = None
 
+        self.cidr_netmask = None
+        self.possible_subnets = None
+        self.subnets = None
+
         self.common_modules = {}
         self.common_template = 'common.hcl'
         self.common_dict = {}
@@ -255,6 +259,14 @@ class TerragruntGenerator(object):
             self.num_azs = int(self.num_azs)
             self.availability_zones = self.available_azs[self.region][0:self.num_azs]
 
+    def build_network(self):
+        self.cidr_netmask = int(self.cidr.split('/')[1])
+
+        self.possible_subnets = list(ipaddress.ip_network(self.cidr).subnets(
+            prefixlen_diff=(self.netmask - self.cidr_netmask)))
+        self.subnets = self.possible_subnets[0:(self.num_subnets * self.num_azs)]
+
+
     def ask_networking(self):
         # TODO: Get rid of this?
         self.num_vpcs = self.choice_question('How many vpcs?', [1, 2, 3, 4])
@@ -262,11 +274,8 @@ class TerragruntGenerator(object):
         self.subnet_names = ['private_subnets', 'public_subnets', 'database_subnets',
                              'elasticache_subnets', 'redshift_subnets', 'infra_subnets'][0:self.num_subnets]
         self.netmask = int(self.choice_question('What size netmask?', [20, 22, 24]))
-        self.cidr_netmask = int(self.cidr.split('/')[1])
 
-        self.possible_subnets = list(ipaddress.ip_network(self.cidr).subnets(
-            prefixlen_diff=self.cidr_netmask - self.netmask))
-        self.subnets = self.possible_subnets[0:self.num_subnets * self.num_azs]
+        self.build_network()
 
     def module_ask_module_location(self):
         # TODO:
@@ -399,7 +408,7 @@ class TerragruntGenerator(object):
 
     def make_region(self):
         region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[self.region_num]['region'])
-        region_dict = {'is_service': False, 'inputs': self.stack[self.r]['region_inputs'], 'region':self.region}
+        region_dict = {'is_service': False, 'inputs': self.stack[self.r]['region_inputs'], 'region': self.region}
         rendered_file = self.tpl_env.get_template(self.service_template).render(region_dict)
         with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
             fp.write(rendered_file)
@@ -407,7 +416,7 @@ class TerragruntGenerator(object):
     def make_env(self):
         env_dict = {'is_service': False,
                     'inputs': {'environment': '{{ cookiecutter.environment }}',
-                                              'tags': {'Environment': '{{ cookiecutter.environment }}'}}}
+                               'tags': {'Environment': '{{ cookiecutter.environment }}'}}}
         env_dict['inputs'].update(self.stack['env_inputs'])
         rendered_file = self.tpl_env.get_template(self.service_template).render(env_dict)
         with open(os.path.join(os.path.curdir, 'environment.tfvars'), 'w') as fp:
