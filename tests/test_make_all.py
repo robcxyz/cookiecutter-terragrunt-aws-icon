@@ -121,6 +121,7 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
         if not stack_invalid:
             print(f'f{stack_file} stack is valid')
             inp = hcl.load(fp)
+            tg.region = 'ap-northeast-1'
             tg.stack[0] = StackParser(inp).stack
             tg.stack[0].update({'region': 'ap-northeast-1'})
             if not service_invalid and not head_invalid:

@@ -98,7 +98,7 @@ class StackParser(object):
                     if i[0] in v.keys() and i[1]['target'] == 'modules':
                         self.stack['modules'][k].update({i[0]: v[i[0]]})
                     elif i[0] in v.keys() and i[1]['target'] != 'modules':
-                        self.stack[i[1]['target']].update({i[0]: v[i[0]]})
+                        self.stack[i[1]['target']].update(v[i[0]])
 
         return self.stack
 
@@ -345,7 +345,7 @@ class TerragruntGenerator(object):
     def ask_terragrunt_version(self):
         if not self.headless:
             self.terraform_version = self.choice_question('What version of Terraform do you want to use?',
-                                                          ['0.12', '0.11'])
+                                                          ['0.11', '0.12'])
         if self.terraform_version == '0.11':
             self.terraform_version = str(11)
             self.terragrunt_file = 'terraform.tfvars'
@@ -392,13 +392,15 @@ class TerragruntGenerator(object):
 
                 env_tpl = self.tpl_env.get_template(self.service_template)
                 rendered_file = env_tpl.render(stack_dict)
-                with open(os.path.join(module_path, self.terragrunt_file), 'w') as fp:
+                with open(os.path.join(module_path, self.terragrunt_file), 'w+') as fp:
                     fp.write(rendered_file)
+            self.make_region()
 
     def make_region(self):
         region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[self.region_num]['region'])
 
-        region_dict = {'is_service': False}  # TODO
+        # region_dict = {'is_service': False}
+        region_dict = {'is_service': False, 'inputs': self.stack[self.r]['region_inputs']}  # TODO
         rendered_file = self.tpl_env.get_template(self.service_template).render(region_dict)
         with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
             fp.write(rendered_file)
@@ -433,7 +435,7 @@ class TerragruntGenerator(object):
 
         # Make the path first
         self.make_modules()
-        self.make_region()
+        # self.make_region()
         self.make_env()
         self.make_head()
         self.make_other()

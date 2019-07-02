@@ -8,6 +8,8 @@ from jinja2.exceptions import UndefinedError
 from hooks.pre_gen_project import TerragruntGenerator, StackParser
 
 SINGLE_STACK = {0: {'region': 'ap-northeast-1',
+                    'region_inputs': {'cidr': '{{ cookiecutter.cidr }}'},
+                    'env_inputs': {},
                     'modules': {
                         'vpc': {'type': 'module',
                                 'source': 'github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v1.59.0',
@@ -87,7 +89,6 @@ FIXTURES = [
 
 @pytest.mark.parametrize("tpl_fname,invalid,version", FIXTURES)
 def test_render_service_vpc(tpl_fname, invalid, version, tmpdir):
-
     with open(os.path.join(FIXTURE_DIR, tpl_fname), 'rb') as fp:
         print(f'\n\ntpl_fname is {tpl_fname}\n\n')
 
