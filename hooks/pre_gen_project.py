@@ -117,9 +117,11 @@ class TerragruntGenerator(object):
         if self.debug:
             self.environment = environment
             self.num_regions = num_regions
+            self.cidr = '10.0.0.0/16'
         else:
             self.environment = '{{ cookiecutter.environment }}'
             self.num_regions = int('{{ cookiecutter.num_regions }}')
+            self.cidr = ('{{ cookiecutter.cidr }}')
         self.r = 0  # Region counter
 
         self.got_az_list = False
@@ -132,7 +134,7 @@ class TerragruntGenerator(object):
         self.ha = False
         self.availability_zones = None
 
-        self.stack = {'env_inputs':{}}
+        self.stack = {'env_inputs': {}}
         self.use_common_modules = None
         self.available_azs = None
 
@@ -142,6 +144,7 @@ class TerragruntGenerator(object):
 
         self.common_modules = {}
         self.common_template = 'common.hcl'
+        self.common_dict = {}
 
         self.use_stack_modules = None
         self.stack_names = []
@@ -223,8 +226,6 @@ class TerragruntGenerator(object):
         self.possible_regions.remove(region)
         self.region = region
 
-        self.stack[self.r] = {'region': region, 'region_inputs':{}, 'modules': {}}
-
     def get_aws_availability_zones(self):
         if not self.got_az_list:
             self.rebuild_availability_zones = self.choice_question(
@@ -256,10 +257,16 @@ class TerragruntGenerator(object):
 
     def ask_networking(self):
         # TODO: Get rid of this?
-        # self.num_vpcs = self.simple_question('How many vpcs?', [1, 2, 3, 4])
-        # self.num_subnets = self.simple_question('How many subnets?', [2, 3, 4, 5])
+        self.num_vpcs = self.choice_question('How many vpcs?', [1, 2, 3, 4])
+        self.num_subnets = int(self.choice_question('How many subnets?', [2, 3, 4, 5]))
         self.subnet_names = ['private_subnets', 'public_subnets', 'database_subnets',
                              'elasticache_subnets', 'redshift_subnets', 'infra_subnets'][0:self.num_subnets]
+        self.netmask = int(self.choice_question('What size netmask?', [20, 22, 24]))
+        self.cidr_netmask = int(self.cidr.split('/')[1])
+
+        self.possible_subnets = list(ipaddress.ip_network(self.cidr).subnets(
+            prefixlen_diff=self.cidr_netmask - self.netmask))
+        self.subnets = self.possible_subnets[0:self.num_subnets*self.num_azs]
 
     def module_ask_module_location(self):
         # TODO:
@@ -282,8 +289,8 @@ class TerragruntGenerator(object):
         self.use_common_modules = self.choice_question('Would you like to use common modules', ['y', 'n'])
         if self.use_common_modules == 'y':
             try:
-                common_dict = {}
-                common_str = self.stack_env.get_template(self.common_template).render(common_dict)
+
+                common_str = self.stack_env.get_template(self.common_template).render(self.common_dict)
                 self.common_modules = hcl.loads(common_str)
                 parsed_stack = StackParser(self.common_modules).stack
                 self.stack[self.r]['modules'].update(parsed_stack['modules'])
@@ -302,10 +309,20 @@ class TerragruntGenerator(object):
             stack_options = ['basic-p-rep', 'decoupled-p-rep', 'data-science', 'data-engineering-hadoop']
             self.stack_type = self.choice_question('What type of stack are you building?\n', stack_options)
             # TODO: Perhaps qualify the options first or allow for alternative input
+            self.stack_template = str(self.stack_type) + '.hcl'
+            stack_str = self.stack_env.get_template(self.stack_template).render(self.common_dict)
+            try:
+                self.common_modules = hcl.loads(stack_str)
+                parsed_stack = StackParser(self.common_modules).stack
+                self.stack[self.r]['modules'].update(parsed_stack['modules'])
+                self.stack[self.r]['region_inputs'].update(parsed_stack['region_inputs'])
+                self.stack['env_inputs'].update(parsed_stack['env_inputs'])
+                print('here')
+            except:
+                err_msg = 'Could not read common modules, invalid format'
+                print(err_msg)
+                raise ValueError(err_msg)
 
-            with open(os.path.join(self.stacks_dir, str(self.stack_type) + '.hcl')) as f:
-                self.stack_modules = hcl.load(f)
-            self.stack[self.r]['modules'].update(StackParser(self.stack_modules).stack['modules'])
 
     def ask_special_modules(self):
 
@@ -345,8 +362,14 @@ class TerragruntGenerator(object):
             self.get_stack_env()
             self.r = r
             self.ask_region()
-            self.stack[self.r] = {'region': self.region, 'modules': {}, 'files': {}}
+            self.stack[self.r] = {'region': self.region, 'modules': {}, 'region_inputs': {},
+                                  'files': {}}
             self.ask_availability_zones()
+            self.stack[self.r]['azs'] = self.availability_zones
+            # self.ask_networking()
+
+            # self.common_dict = {'avs': self.availability_zones}
+
             self.ask_common_modules()
             self.ask_stack_modules()
             self.ask_special_modules()

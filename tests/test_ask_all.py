@@ -73,8 +73,9 @@ def test_ask_region(monkeypatch):
     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
     tg = TerragruntGenerator(debug=True)
     tg.ask_region()
+    pprint(tg.stack)
     assert tg.regions == ['eu-west-3']
-    assert tg.stack == {0: {'region': 'eu-west-3', 'modules': {}}}
+    # assert tg.stack == {0: {'region': 'eu-west-3', 'modules': {}}}
 
     # # Multiple inputs
     # inputs = ['n', 'eu-west-2', 'eu-west-3']
@@ -129,6 +130,37 @@ def test_ask_common_modules(hcl_fname, invalid, monkeypatch):
 
     pprint(tg.stack)
     # assert tg.stack == 3
+
+STACK_FIXTURES = [
+    (
+        "common.hcl",
+        False,
+    ),
+    (
+        "bad-common.hcl",
+        True,
+    )
+]
+
+
+@pytest.mark.parametrize("hcl_fname,invalid", STACK_FIXTURES)
+def test_ask_stack_modules(hcl_fname, invalid, monkeypatch):
+    # Single region
+    inputs = ['', '']
+    input_generator = (i for i in inputs)
+    monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
+    tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1',
+                             stack={'env_inputs': {}, 0: {'region': 'eu-west-3', 'modules': {}, 'region_inputs': {}}})
+    tg.stacks_dir = os.path.join(os.path.abspath(os.path.curdir), 'stacks')
+    tg.common_template = hcl_fname
+    tg.get_stack_env()
+    if not invalid:
+        tg.ask_stack_modules()
+    else:
+        with pytest.raises((ValueError, UndefinedError, TemplateSyntaxError)):
+            tg.ask_common_modules()
+
+    pprint(tg.stack)
 
 # def test_ask_all(monkeypatch):
 #     # Single regions

@@ -9,13 +9,13 @@ iam-terraform {
   }
 }
 
+
 iam-user {
   type = "module"
   source = "github.com/robcxyz/terragrunt-root-modules.git/aws/init/iam-user"
   inputs {
     name = "UserIAM"
   }
-
 }
 
 keys {

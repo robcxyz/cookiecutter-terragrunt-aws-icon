@@ -36,6 +36,10 @@ STACK_FIXTURES = [
         "common.hcl",
         False,
     ),
+    # (
+    #     "common-render.hcl",
+    #     False,
+    # ),
     (
         "basic-p-rep.hcl",
         False,
@@ -82,12 +86,14 @@ def test_stack_parser(hcl_fname, invalid):
         print(f'hcl_fname is {hcl_fname}')
         inp = fp.read()
 
-        if not invalid:
-            output = StackParser(hcl.loads(inp)).stack
-            pprint(output)
-        else:
-            with pytest.raises(ValueError):
-                StackParser(hcl.loads(inp))
+        if hcl_fname not in ['common-render.hcl']:
+
+            if not invalid:
+                output = StackParser(hcl.loads(inp)).stack
+                pprint(output)
+            else:
+                with pytest.raises(ValueError):
+                    StackParser(hcl.loads(inp))
 
 
 @pytest.mark.parametrize("stack_file,stack_invalid", STACK_FIXTURES)

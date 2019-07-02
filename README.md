@@ -1,6 +1,8 @@
 
 # WIP 
 
+This started out with great intentions but spaghettified 
+
 ## cookiecutter-terragrunt-aws-icon
 
 Cookiecutter template to build a [terragrunt]() folder structure for a terraform deployment of various stacks. 

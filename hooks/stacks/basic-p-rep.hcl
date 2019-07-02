@@ -7,11 +7,9 @@ vpc {
     single_nat_gateway = "false"
     enable_dns_hostnames = "true"
     enable_dns_support = "true"
-    cidr = "{{ cookiecutter.cidr }}"
   }
   region_inputs {
-    {% for k, v in networking.items() %}
-    {{ k }} = "{{ v }}"{% endfor %}
+    cidr = "{% raw %}{{ cookiecutter.cidr }}{% endraw %}"
   }
 }
 
