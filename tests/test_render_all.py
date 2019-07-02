@@ -7,7 +7,8 @@ from jinja2.exceptions import UndefinedError
 
 from hooks.pre_gen_project import TerragruntGenerator, StackParser
 
-SINGLE_STACK = {0: {'region': 'ap-northeast-1',
+SINGLE_STACK = {'env_inputs': {},
+                0: {'region': 'ap-northeast-1',
                     'region_inputs': {'cidr': '{{ cookiecutter.cidr }}'},
                     'env_inputs': {},
                     'modules': {

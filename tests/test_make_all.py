@@ -132,13 +132,18 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
                     print(f'version = {version}')
                     print(os.listdir(p))
                     assert os.listdir(p) == sorted(['ap-northeast-1', 'environment.tfvars',
-                                                    'terragrunt.hcl', 'clear-cache.sh'])
+                                                    'terragrunt.hcl', 'clear-cache.sh',
+                                                    'stack.json'])
+                    with open(os.path.join(p,'ap-northeast-1', 'region.tfvars')) as fp:
+                        print(fp.read())
                 elif int(tg.terraform_version) == 11:
                     print(f'version = {version}')
                     print(os.listdir(p))
-                    print(open(os.path.join(p, 'terraform.tfvars')))
                     assert sorted(os.listdir(p)) == sorted(['ap-northeast-1', 'environment.tfvars',
-                                                            'terraform.tfvars', 'clear-cache.sh'])
+                                                            'terraform.tfvars', 'clear-cache.sh',
+                                                            'stack.json'])
+                    with open(os.path.join(p,'ap-northeast-1', 'region.tfvars')) as fp:
+                        print(fp.read())
 
                 else:
                     print(tg.terraform_version)

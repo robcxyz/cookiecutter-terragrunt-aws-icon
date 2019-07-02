@@ -4,7 +4,7 @@ REMOTE_STATE_REGION=$2
 LOCAL_KEY_FILE=$3
 ROOT_DOMAIN_NAME=$4
 CORPORATE_IP=$5
-cat<<EOF > ./icon-dev/account.tfvars
+cat<<EOF > ./account.tfvars
 account_id = "$ACCOUNT_ID"
 aws_allowed_account_ids = ["$ACCOUNT_ID"]
 terraform_state_region = "$REMOTE_STATE_REGION"

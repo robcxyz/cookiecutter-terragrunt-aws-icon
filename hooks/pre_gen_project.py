@@ -266,7 +266,7 @@ class TerragruntGenerator(object):
 
         self.possible_subnets = list(ipaddress.ip_network(self.cidr).subnets(
             prefixlen_diff=self.cidr_netmask - self.netmask))
-        self.subnets = self.possible_subnets[0:self.num_subnets*self.num_azs]
+        self.subnets = self.possible_subnets[0:self.num_subnets * self.num_azs]
 
     def module_ask_module_location(self):
         # TODO:
@@ -306,6 +306,8 @@ class TerragruntGenerator(object):
 
         self.use_stack_modules = self.choice_question('Do you want to use a generic stack?\n', ['y', 'n'])
         if self.use_stack_modules == 'y':
+            # stack_options = os.listdir(self.stacks_dir).remove('common.hcl')  # This won't work for testing but
+            # something like it should be built to qualify a list of possible stacks
             stack_options = ['basic-p-rep', 'decoupled-p-rep', 'data-science', 'data-engineering-hadoop']
             self.stack_type = self.choice_question('What type of stack are you building?\n', stack_options)
             # TODO: Perhaps qualify the options first or allow for alternative input
@@ -322,7 +324,6 @@ class TerragruntGenerator(object):
                 err_msg = 'Could not read common modules, invalid format'
                 print(err_msg)
                 raise ValueError(err_msg)
-
 
     def ask_special_modules(self):
 
@@ -364,12 +365,12 @@ class TerragruntGenerator(object):
             self.ask_region()
             self.stack[self.r] = {'region': self.region, 'modules': {}, 'region_inputs': {},
                                   'files': {}}
-            self.ask_availability_zones()
-            self.stack[self.r]['azs'] = self.availability_zones
-            # self.ask_networking()
 
+            # TODO: Encapsulate logic in separate coockiecutter for AZs and networking
+            # self.ask_availability_zones()
+            # self.stack[self.r]['azs'] = self.availability_zones
             # self.common_dict = {'avs': self.availability_zones}
-
+            # self.ask_networking()
             self.ask_common_modules()
             self.ask_stack_modules()
             self.ask_special_modules()
@@ -398,22 +399,22 @@ class TerragruntGenerator(object):
 
     def make_region(self):
         region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[self.region_num]['region'])
-
-        # region_dict = {'is_service': False}
-        region_dict = {'is_service': False, 'inputs': self.stack[self.r]['region_inputs']}  # TODO
+        region_dict = {'is_service': False, 'inputs': self.stack[self.r]['region_inputs'], 'region':self.region}
         rendered_file = self.tpl_env.get_template(self.service_template).render(region_dict)
         with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
             fp.write(rendered_file)
 
     def make_env(self):
-        env_dict = {'is_service': False}  # TODO
+        env_dict = {'is_service': False,
+                    'inputs': {'environment': '{{ cookiecutter.environment }}',
+                                              'tags': {'Environment': '{{ cookiecutter.environment }}'}}}
+        env_dict['inputs'].update(self.stack['env_inputs'])
         rendered_file = self.tpl_env.get_template(self.service_template).render(env_dict)
         with open(os.path.join(os.path.curdir, 'environment.tfvars'), 'w') as fp:
             fp.write(rendered_file)
 
     def make_head(self):
-        env_dict = {'is_service': False}  # TODO
-
+        env_dict = {}  # Don't know of any rendering here
         rendered_file = self.tpl_env.get_template(self.head_template).render(env_dict)
         with open(os.path.join(os.path.curdir, self.terragrunt_file), 'w') as fp:
             fp.write(rendered_file)
@@ -432,13 +433,13 @@ class TerragruntGenerator(object):
 
     def make_all(self):
         self.get_tpl_env()
-
         # Make the path first
-        self.make_modules()
-        # self.make_region()
+        self.make_modules()  # self.make_region() inside
         self.make_env()
         self.make_head()
         self.make_other()
+        with open('stack.json', 'w') as fp:
+            json.dump(self.stack, fp)
 
     def main(self):
         if not self.headless:
@@ -447,5 +448,5 @@ class TerragruntGenerator(object):
 
 
 if __name__ == '__main__':
-    tg = TerragruntGenerator(debug=True, num_regions=2)
+    tg = TerragruntGenerator(debug=False)
     tg.main()
