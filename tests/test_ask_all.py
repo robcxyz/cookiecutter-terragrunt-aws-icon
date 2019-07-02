@@ -109,6 +109,7 @@ COMMON_FIXTURES = [
     )
 ]
 
+
 @pytest.mark.parametrize("hcl_fname,invalid", COMMON_FIXTURES)
 def test_ask_common_modules(hcl_fname, invalid, monkeypatch):
     # Single region
@@ -116,7 +117,7 @@ def test_ask_common_modules(hcl_fname, invalid, monkeypatch):
     input_generator = (i for i in inputs)
     monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
     tg = TerragruntGenerator(num_regions=1, debug=True, region='ap-northeast-1',
-                             stack={0: {'region': 'eu-west-3', 'modules': {}}, 'region_inputs': {}})
+                             stack={'env_inputs': {}, 0: {'region': 'eu-west-3', 'modules': {}, 'region_inputs': {}}})
     tg.stacks_dir = os.path.join(os.path.abspath(os.path.curdir), 'stacks')
     tg.common_template = hcl_fname
     tg.get_stack_env()

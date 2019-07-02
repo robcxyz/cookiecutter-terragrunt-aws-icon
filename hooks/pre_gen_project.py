@@ -50,12 +50,12 @@ class StackParser(object):
             'source': {'type': str, 'optional': False, 'target': 'modules'},
             'dependencies': {'type': list, 'optional': True, 'target': 'modules'},
             'inputs': {'type': dict, 'optional': True, 'target': 'modules'},
-            'env_inputs': {'type': dict, 'optional': True, 'target': 'vars_env'},
-            'region_inputs': {'type': dict, 'optional': True, 'target': 'vars_region'},
+            'env_inputs': {'type': dict, 'optional': True, 'target': 'env_inputs'},
+            'region_inputs': {'type': dict, 'optional': True, 'target': 'region_inputs'},
         }
         self.file_keys = {}
 
-        self.stack = {'modules': {}, 'files': {}, 'vars_env': {}, 'vars_region': {}}
+        self.stack = {'modules': {}, 'files': {}, 'env_inputs': {}, 'region_inputs': {}}
         self.main()
 
     def _validate_format(self, k, stack_dict):
@@ -96,7 +96,7 @@ class StackParser(object):
                 self.stack['modules'].update({k: {'source': v['source']}})
                 for i in [opt for opt in self.module_keys.items() if opt[1]['optional']]:
                     if i[0] in v.keys() and i[1]['target'] == 'modules':
-                        self.stack['modules'].update({k: {'source': v[i[0]]}})
+                        self.stack['modules'][k].update({i[0]: v[i[0]]})
                     elif i[0] in v.keys() and i[1]['target'] != 'modules':
                         self.stack[i[1]['target']].update({i[0]: v[i[0]]})
 
@@ -132,7 +132,7 @@ class TerragruntGenerator(object):
         self.ha = False
         self.availability_zones = None
 
-        self.stack = {}
+        self.stack = {'env_inputs':{}}
         self.use_common_modules = None
         self.available_azs = None
 
@@ -222,8 +222,8 @@ class TerragruntGenerator(object):
         self.regions.append(region)
         self.possible_regions.remove(region)
         self.region = region
-        self.stack[self.r] = {'region': region}
-        self.stack[self.r].update({'modules': {}})
+
+        self.stack[self.r] = {'region': region, 'region_inputs':{}, 'modules': {}}
 
     def get_aws_availability_zones(self):
         if not self.got_az_list:
@@ -285,8 +285,11 @@ class TerragruntGenerator(object):
                 common_dict = {}
                 common_str = self.stack_env.get_template(self.common_template).render(common_dict)
                 self.common_modules = hcl.loads(common_str)
-                modules = StackParser(self.common_modules).stack['modules']
-                self.stack[self.r]['modules'].update(modules)
+                parsed_stack = StackParser(self.common_modules).stack
+                self.stack[self.r]['modules'].update(parsed_stack['modules'])
+                self.stack[self.r]['region_inputs'].update(parsed_stack['region_inputs'])
+                self.stack['env_inputs'].update(parsed_stack['env_inputs'])
+                print('here')
             except:
                 err_msg = 'Could not read common modules, invalid format'
                 print(err_msg)

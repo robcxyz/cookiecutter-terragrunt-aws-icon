@@ -4,6 +4,9 @@ iam-terraform {
   inputs {
     name = "TerraformIAM"
   }
+  region_inputs {
+    stuff = "things"
+  }
 }
 
 iam-user {
@@ -12,6 +15,7 @@ iam-user {
   inputs {
     name = "UserIAM"
   }
+
 }
 
 keys {
