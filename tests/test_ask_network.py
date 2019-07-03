@@ -24,7 +24,11 @@ def test_cidr_stack(tmpdir):
     tg.stack[0] = StackParser(out).stack
 
     tg.templates_dir = TEMPLATES_DIR
+    print(os.path.exists(tg.templates_dir))
+    print(tg.templates_dir)
     tg.get_tpl_env()
+
+    # with open()
 
     tg.ask_terragrunt_version()
     tg.region_num = 0

@@ -62,14 +62,29 @@ terragrunt --version
 
 ### Usage 
 
-```
+#### Generate reference architecture
+
+```bash
 cookiecutter https://github.com/robcxyz/cookiecutter-terragrunt-aws-icon
 cd <env>
 chmod +x init.sh clear-cache.sh 
 ./init.sh <ACCOUNT_ID> <REMOTE_STATE_REGION> <LOCAL_KEY_FILE> <ROOT_DOMAIN_NAME> <CORPORATE_IP>
-terragrunt apply-all --terragrunt-source-update
-echo "I said nice one brotha"
 ```
+
+#### Deploy 
+
+```bash
+cd <region>
+terragrunt apply-all --terragrunt-source-update
+```
+
+#### Move to Prod 
+```bash
+cp ../dev ../prod && cd ../prod 
+./init.sh <ACCOUNT_ID> <REMOTE_STATE_REGION> <LOCAL_KEY_FILE> <ROOT_DOMAIN_NAME> <CORPORATE_IP>
+terragrunt apply-all --terragrunt-source-update
+```
+
 
 ### TTD 
 
