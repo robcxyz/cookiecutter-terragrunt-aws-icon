@@ -115,14 +115,20 @@ class TerragruntGenerator(object):
         self.terragrunt_file = None
         self.headless = headless
 
-        os.mkdir(os.path.join(os.path.curdir, 'hooks'))  # Initialize the hooks directory
-        os.mkdir(os.path.join(os.path.curdir, 'hooks', 'stacks'))
-        os.mkdir(os.path.join(os.path.curdir, 'hooks', 'templates'))
+        if not self.debug:
+            os.mkdir(os.path.join(os.path.curdir, 'hooks'))  # Initialize the hooks directory
+            os.mkdir(os.path.join(os.path.curdir, 'hooks', 'stacks'))
+            os.mkdir(os.path.join(os.path.curdir, 'hooks', 'templates'))
 
-        self.stacks_dir = os.path.join(os.path.curdir, 'hooks', 'stacks')
-        self.templates_dir = os.path.join(os.path.curdir, 'hooks', 'templates')
+        if self.debug:
+            self.stacks_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'tests',  'stacks')
+            self.templates_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'tests',  'templates')
+        else:
+            self.stacks_dir = os.path.join(os.path.curdir, 'hooks', 'stacks')
+            self.templates_dir = os.path.join(os.path.curdir, 'hooks', 'templates')
 
-        self.get_all_templates()
+        if not self.debug:
+            self.get_all_templates()
 
         # These values need override to pass tests instead of rendering them
         if self.debug:

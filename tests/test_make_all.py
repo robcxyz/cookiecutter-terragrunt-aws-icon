@@ -102,6 +102,7 @@ def test_stack_parser(hcl_fname, invalid):
 @pytest.mark.parametrize("version", VERSION_FIXTURES)
 def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head_file, head_invalid, version,
                   tmpdir):
+
     # inputs = ['']
     # input_generator = (i for i in inputs)
     # monkeypatch.setattr('builtins.input', lambda prompt: next(input_generator))
@@ -116,6 +117,7 @@ def test_make_all(stack_file, stack_invalid, service_file, service_invalid, head
     tg.service_template = service_file + tg.terraform_version + '.hcl'
     p = tmpdir.mkdir("sub")
     os.chdir(p)
+    print(f'Cur dir is {tg.templates_dir}')
     with open(os.path.join(FIXTURE_DIR, stack_file), 'r') as fp:
         print(f'\n\ntpl_fname is {service_file}\n\n')
         if not stack_invalid:
