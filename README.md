@@ -22,6 +22,11 @@ This is not ready for use and is more to demonstrate some of the coupling issues
 trying to generalize components. Please see the [ttd](#ttd) for what needs to be built.  
 This is part a larger project on cookiecutter. Please pm [me](https://github.com/robcxyz) to ask more. 
 
+Status:
+- terraform 12 not tested 
+- Only `basic-p-rep` working 
+
+
 ### Pre-installation 
 
 This package depends on these requirements 

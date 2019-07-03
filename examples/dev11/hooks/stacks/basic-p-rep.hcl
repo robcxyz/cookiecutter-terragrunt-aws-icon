@@ -57,7 +57,6 @@ ebs {
   inputs {
     resource_group = "ebs"
     volume_path = "/dev/sdf"
-    ebs_volume_size = 100
   }
 }
 
