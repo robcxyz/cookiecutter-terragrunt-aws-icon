@@ -4,10 +4,33 @@ from __future__ import unicode_literals
 
 import os
 import pytest
+import hcl
 
-from hooks.pre_gen_project import TerragruntGenerator
+from hooks.pre_gen_project import TerragruntGenerator, StackParser
 
 from pprint import pprint
+
+TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
+
+def test_cidr_stack(tmpdir):
+    with open(os.path.join('stacks', 'cidr-issue.hcl'), 'r') as f:
+        out = hcl.load(f)
+    p = tmpdir.mkdir("sub")
+    os.chdir(p)
+
+    tg = TerragruntGenerator(debug=True, terraform_version="0.11", headless=True, num_azs=3)
+    tg.region = 'ap-northeast-1'
+    tg.stack[0] = StackParser(out).stack
+    # pprint(tg.stack)
+    tg.templates_dir = TEMPLATES_DIR
+    tg.ask_terragrunt_version()
+    tg.get_tpl_env()
+    tg.region_num = 0
+    region_dict = {'is_service': False, 'inputs': tg.stack[0]['region_inputs'], 'region': tg.region}
+    rendered_file = tg.tpl_env.get_template(tg.service_template).render(region_dict)
+
+    print(rendered_file)
+
 
 NETWORKS = [
     (

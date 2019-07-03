@@ -454,7 +454,8 @@ class TerragruntGenerator(object):
 
     def make_region(self):
         region_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[self.region_num]['region'])
-        region_dict = {'is_service': False, 'inputs': self.stack[self.r]['region_inputs'], 'region': self.region}
+        self.stack[self.r]['region_inputs'].update({'region': self.region})
+        region_dict = {'is_service': False, 'inputs': self.stack[self.r]['region_inputs']}
         rendered_file = self.tpl_env.get_template(self.service_template).render(region_dict)
         with open(os.path.join(region_path, 'region.tfvars'), 'w') as fp:
             fp.write(rendered_file)

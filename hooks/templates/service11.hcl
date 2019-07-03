@@ -19,6 +19,8 @@ terragrunt = {
 {{ k }} = {{ "{" }} {% for k2, v2 in v.items() %}
   {{ k2 }} = "{{ v2 }}"{% endfor %}
 {{ "}" }}
+{% elif v is iterable() %}{{ k }} = {% for k in v %}
+"{{ v }}"{% if not loop.last %},{% endif %}{% endfor %}
 {% else %}
 {{ k }} = "{{ v }}"{% endif %}{% endfor %}
 {% endif %}
