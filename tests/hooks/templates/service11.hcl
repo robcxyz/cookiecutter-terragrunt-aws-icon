@@ -21,4 +21,4 @@ terragrunt = {
 {{ "}" }}
 {% else %}
 {{ k }} = "{{ v }}"{% endif %}{% endfor %}
-}{% endif %}
+{% endif %}

@@ -68,6 +68,14 @@ echo "I said nice one brotha"
 
 ### TTD 
 
+#### Bugs 
+- Fix output of network 
+    - Rebuild network 
+- fix region output 
+- Rebuild tests to point to hooks dir and tests dir 
+- Read hcl after tests 
+
+#### General 
 - Throw better errors to bubble up what exactly is messing with the jinja 
 - Upgrade question to [python-prompt-toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit)
 - Get headless version working properly 

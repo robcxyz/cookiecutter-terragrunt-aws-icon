@@ -2,6 +2,7 @@ iam-terraform {
   type = "module"
   source = "github.com/robcxyz/terragrunt-root-modules.git/aws/init//iam-terraform"
   inputs {
+    resource_group = "iam-terraform"
     name = "TerraformIAM"
   }
 }
@@ -10,6 +11,7 @@ iam-user {
   type = "module"
   source = "github.com/robcxyz/terragrunt-root-modules.git/aws/init//iam-user"
   inputs {
+    resource_group = "iam-user"
     name = "UserIAM"
   }
 }
@@ -19,6 +21,7 @@ keys {
   source = "github.com/robcxyz/terragrunt-root-modules.git/aws/common//keys"
   inputs {
     name = "keys"
+    resource_group = "keys"
   }
 }
 

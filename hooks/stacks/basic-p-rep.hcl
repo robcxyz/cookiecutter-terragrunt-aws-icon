@@ -10,13 +10,9 @@ vpc {
   }
   region_inputs {
     azs = ["us-east-1a", "us-east-1b", "us-east-1c"]
-{% raw %}
     cidr = "10.0.0.0/16"
     private_subnets = ["10.10.0.0/20", "10.10.16.0/20", "10.10.32.0/20"]
     public_subnets = ["10.10.64.0/20", "10.10.80.0/20", "10.10.96.0/20"]
-{% endraw %}
-  }
-  env_inputs {
   }
 }
 
@@ -24,6 +20,7 @@ dns {
   type = "module"
   source = "github.com/robcxyz/terragrunt-root-modules.git/aws/networking//dns"
   inputs {
+    resource_group = "dns"
   }
   env_inputs {
     icon_domain_name = "solidwallet.io"
@@ -33,7 +30,6 @@ dns {
     org_subdomain = "insight"
   }
 }
-
 
 ec2 {
   type = "module"
@@ -59,12 +55,18 @@ ebs {
   type = "module"
   source = "github.com/robcxyz/terragrunt-root-modules.git/aws/storage//ebs"
   inputs {
-    resource_group = "dns"
+    resource_group = "ebs"
     volume_path = "/dev/sdf"
-
   }
-  region_inputs {
+}
 
+efs {
+  type = "module"
+  source = "github.com/robcxyz/terragrunt-root-modules.git/aws/storage//efs"
+  dependencies = ["vpc"]
+  inputs {
+    resource_group = "efs"
+    volume_path = "/dev/sdf"
   }
 }
 
@@ -83,4 +85,3 @@ logging {
     log_location_prefix = "logs"
   }
 }
-

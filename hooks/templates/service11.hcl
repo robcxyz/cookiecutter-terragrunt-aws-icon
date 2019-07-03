@@ -9,7 +9,7 @@ terragrunt = {
 {% if dependencies %}
   dependencies {
     paths = [{% for i in dependencies %}
-    "../{{ i }}"{% if not loop.last %}","{% endif %}{% endfor %}
+    "../{{ i }}"{% if not loop.last %},{% endif %}{% endfor %}
     ]
   }{% endif %}
 }
@@ -21,4 +21,4 @@ terragrunt = {
 {{ "}" }}
 {% else %}
 {{ k }} = "{{ v }}"{% endif %}{% endfor %}
-}{% endif %}
+{% endif %}
