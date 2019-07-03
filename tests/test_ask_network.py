@@ -12,6 +12,7 @@ from pprint import pprint
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
 
+
 def test_cidr_stack(tmpdir):
     with open(os.path.join('stacks', 'cidr-issue.hcl'), 'r') as f:
         out = hcl.load(f)
@@ -21,14 +22,16 @@ def test_cidr_stack(tmpdir):
     tg = TerragruntGenerator(debug=True, terraform_version="0.11", headless=True, num_azs=3)
     tg.region = 'ap-northeast-1'
     tg.stack[0] = StackParser(out).stack
-    # pprint(tg.stack)
-    tg.templates_dir = TEMPLATES_DIR
-    tg.ask_terragrunt_version()
-    tg.get_tpl_env()
-    tg.region_num = 0
-    region_dict = {'is_service': False, 'inputs': tg.stack[0]['region_inputs'], 'region': tg.region}
-    rendered_file = tg.tpl_env.get_template(tg.service_template).render(region_dict)
 
+    tg.templates_dir = TEMPLATES_DIR
+    tg.get_tpl_env()
+
+    tg.ask_terragrunt_version()
+    tg.region_num = 0
+    tg.stack[0]['region_inputs'].update({'region': tg.region})
+    region_dict = {'is_service': False, 'inputs': tg.stack[0]['region_inputs']}
+    rendered_file = tg.tpl_env.get_template(tg.service_template).render(region_dict)
+    pprint(region_dict)
     print(rendered_file)
 
 
@@ -66,7 +69,7 @@ def test_ask_networking(azs, cidr, mask, num_subnets, result,
     tg.num_vpcs = 1
     tg.num_subnets = num_subnets
     tg.subnet_names = ['private_subnets', 'public_subnets', 'database_subnets',
-                             'elasticache_subnets', 'redshift_subnets', 'infra_subnets'][0:num_subnets]
+                       'elasticache_subnets', 'redshift_subnets', 'infra_subnets'][0:num_subnets]
     tg.num_azs = azs
 
     tg.netmask = mask
@@ -79,4 +82,3 @@ def test_ask_networking(azs, cidr, mask, num_subnets, result,
     pprint(str(tg.subnets))
 
     # pprint(type(tg.subnets))
-

@@ -14,14 +14,15 @@
 }
 {% endif %}
 
-{% if inputs %}inputs = {
-  {% for k, v in inputs.items() %}{% if v is mapping %}
-  {{ k }} = {{ "{" }} {% for k2, v2 in v.items() %}
-    {{ k2 }} = "{{ v2 }}"{% endfor %}
+{% if inputs %}
+{% for k, v in inputs.items() %}{% if v is mapping %}
+{{ k }} = {{ "{" }} {% for k2, v2 in v.items() %}
+{{ k2 }} = "{{ v2 }}"{% endfor %}
   {{ "}" }}
-{% elif v is iterable() %}{{ k }} = {% for k in v %}
-"{{ v }}"{% if not loop.last %},{% endif %}{% endfor %}
+{% elif v is iterable() and v is not string  %}{{ k }} = [{% for i in v %}
+"{{ i }}"{% if not loop.last %},{% endif %}{% endfor %}]
 {% else %}
-  {{ k }} = "{{ v }}"{% endif %}{% endfor %}
-}{% endif %}
+{{ k }} = "{{ v }}"
+{% endif %}{% endfor %}
+{% endif %}
 
