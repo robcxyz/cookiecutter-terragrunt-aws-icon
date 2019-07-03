@@ -114,8 +114,15 @@ class TerragruntGenerator(object):
         self.terraform_version = None
         self.terragrunt_file = None
         self.headless = headless
-        self.stacks_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'hooks', 'stacks')
-        self.templates_dir = os.path.join(os.path.abspath(os.path.curdir), '..', 'hooks', 'templates')
+
+        os.mkdir(os.path.join(os.path.curdir, 'hooks'))  # Initialize the hooks directory
+        os.mkdir(os.path.join(os.path.curdir, 'hooks', 'stacks'))
+        os.mkdir(os.path.join(os.path.curdir, 'hooks', 'templates'))
+
+        self.stacks_dir = os.path.join(os.path.curdir, 'hooks', 'stacks')
+        self.templates_dir = os.path.join(os.path.curdir, 'hooks', 'templates')
+
+        self.get_all_templates()
 
         # These values need override to pass tests instead of rendering them
         if self.debug:
@@ -158,6 +165,7 @@ class TerragruntGenerator(object):
         self.stack_names = []
         self.stack_type = None
         self.stack_modules = {}
+        self.stack_template = None
 
         self.use_special_modules = None
         self.special_modules_location = None
@@ -177,10 +185,6 @@ class TerragruntGenerator(object):
                 setattr(self, key, d[key])
         for key in kwargs:
             setattr(self, key, kwargs[key])
-
-        os.mkdir(os.path.join(os.path.curdir, 'hooks'))  # Initialize the hooks directory
-        os.mkdir(os.path.join(os.path.curdir, 'hooks', 'stacks'))
-        os.mkdir(os.path.join(os.path.curdir, 'hooks', 'templates'))
 
     def region_init(self):
         pass
@@ -227,6 +231,22 @@ class TerragruntGenerator(object):
         if not user_entry:
             user_entry = defaults[0]
         return user_entry
+
+    @staticmethod
+    def get_and_write_raw_content(path):
+        if isinstance(path, list):
+            r = requests.get(RAW_GH + '/'.join(path)).text
+            with open(os.path.join(os.path.curdir, '/'.join(path)), 'w') as f:
+                f.write(r)
+        elif isinstance(path, str):
+            r = requests.get(RAW_GH + path).text
+            with open(os.path.join(os.path.curdir, path), 'w') as f:
+                f.write(r)
+
+    def get_all_templates(self):
+        template_list = ['clear-cache.sh.tpl', 'head11.hcl', 'head12.hcl', 'service11.hcl', 'service12.hcl']
+        for t in template_list:
+            self.get_and_write_raw_content(['hooks', 'templates', t])
 
     def get_aws_availability_zones(self):
         az_list_path = os.path.join(os.path.curdir, 'hooks', 'aws_availability_zones.json')
@@ -312,6 +332,7 @@ class TerragruntGenerator(object):
         self.use_common_modules = self.choice_question('Would you like to use common modules', ['y', 'n'])
         if self.use_common_modules == 'y':
             try:
+                self.get_and_write_raw_content(['hooks', 'stacks', 'common.hcl'])
 
                 common_str = self.stack_env.get_template(self.common_template).render(self.common_dict)
                 self.common_modules = hcl.loads(common_str)
@@ -335,6 +356,9 @@ class TerragruntGenerator(object):
             self.stack_type = self.choice_question('What type of stack are you building?\n', stack_options)
             # TODO: Perhaps qualify the options first or allow for alternative input
             self.stack_template = str(self.stack_type) + '.hcl'
+
+            self.get_and_write_raw_content(['hooks', 'stacks', self.stack_template])
+
             stack_str = self.stack_env.get_template(self.stack_template).render(self.common_dict)
             try:
                 self.common_modules = hcl.loads(stack_str)
@@ -409,7 +433,8 @@ class TerragruntGenerator(object):
             region_modules = self.stack[r]['modules'].keys()
 
             for m in region_modules:
-                module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
+                # module_path = os.path.join(os.path.abspath(os.path.curdir), self.stack[r]['region'], m)
+                module_path = os.path.join(os.path.curdir, self.stack[r]['region'], m)
                 os.makedirs(module_path)
                 stack_dict = self.stack[r]['modules'][m]
 
@@ -465,10 +490,14 @@ class TerragruntGenerator(object):
         with open('stack.json', 'w') as fp:
             json.dump(self.stack, fp)
 
+    # def rm_hooks(self):
+    #     os.rmdir(os.path.join(os.path.curdir))
+
     def main(self):
         if not self.headless:
             self.ask_all()
         self.make_all()
+
 
 
 if __name__ == '__main__':
