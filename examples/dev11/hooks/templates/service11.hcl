@@ -14,11 +14,11 @@ terragrunt = {
   }{% endif %}
 }
 {% endif %}
-{% if inputs %}
+{% if inputs %}inputs = {
   {% for k, v in inputs.items() %}{% if v is mapping %}
-{{ k }} = {{ "{" }} {% for k2, v2 in v.items() %}
-  {{ k2 }} = "{{ v2 }}"{% endfor %}
-{{ "}" }}
+  {{ k }} = {{ "{" }} {% for k2, v2 in v.items() %}
+    {{ k2 }} = "{{ v2 }}"{% endfor %}
+  {{ "}" }}
 {% else %}
-{{ k }} = "{{ v }}"{% endif %}{% endfor %}
+  {{ k }} = "{{ v }}"{% endif %}{% endfor %}
 }{% endif %}
