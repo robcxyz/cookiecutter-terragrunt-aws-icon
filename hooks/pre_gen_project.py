@@ -5,6 +5,8 @@ import os
 import json
 import logging
 import ipaddress
+import requests
+
 import shutil
 
 import boto3
@@ -17,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 REGIONS = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ca-central-1',
            'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 'eu-west-3']
+
+RAW_GH = 'https://raw.github.com/robcxyz/cookiecutter-terragrunt-aws-icon/master/'
 
 
 def get_availability_zones():
@@ -36,8 +40,8 @@ def get_availability_zones():
     return zones
 
 
-def write_availability_zones():
-    with open('aws_availability_zones.json', 'w') as f:
+def write_availability_zones(az_path):
+    with open(az_path, 'w') as f:
         json.dump(get_availability_zones(), f)
 
 
@@ -174,6 +178,10 @@ class TerragruntGenerator(object):
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
+        os.mkdir(os.path.join(os.path.curdir, 'hooks'))  # Initialize the hooks directory
+        os.mkdir(os.path.join(os.path.curdir, 'hooks', 'stacks'))
+        os.mkdir(os.path.join(os.path.curdir, 'hooks', 'templates'))
+
     def region_init(self):
         pass
 
@@ -220,6 +228,25 @@ class TerragruntGenerator(object):
             user_entry = defaults[0]
         return user_entry
 
+    def get_aws_availability_zones(self):
+        az_list_path = os.path.join(os.path.curdir, 'hooks', 'aws_availability_zones.json')
+        if not self.got_az_list:
+            self.rebuild_availability_zones = self.choice_question(
+                'Would you like to update the availabilty zones list?',
+                ['n', 'y'])
+            if self.rebuild_availability_zones == 'y':
+                write_availability_zones(az_list_path)
+            else:
+                r = requests.get(RAW_GH + '/hooks/aws_availability_zones.json').text
+                with open(az_list_path, 'w') as f:
+                    f.write(r)
+
+            with open(os.path.join(os.path.curdir, 'hooks', 'aws_availability_zones.json'), 'r') as f:
+                self.available_azs = json.load(f)
+
+                self.possible_regions = list(self.available_azs.keys())
+                self.got_az_list = True
+
     def ask_region(self):
         self.get_aws_availability_zones()
         region = self.choice_question('Enter region number %d to deploy into? \n' % (self.r + 1),
@@ -229,18 +256,6 @@ class TerragruntGenerator(object):
         self.regions.append(region)
         self.possible_regions.remove(region)
         self.region = region
-
-    def get_aws_availability_zones(self):
-        if not self.got_az_list:
-            self.rebuild_availability_zones = self.choice_question(
-                'Would you like to update the availabilty zones list?',
-                ['n', 'y'])
-            if self.rebuild_availability_zones == 'y':
-                write_availability_zones()
-            with open(os.path.join(self.stacks_dir, '..', 'aws_availability_zones.json'), 'r') as f:
-                self.available_azs = json.load(f)
-            self.possible_regions = list(self.available_azs.keys())
-            self.got_az_list = True
 
     def ask_availability_zones(self):
         self.num_azs = self.choice_question('How many availability zones?',
@@ -266,7 +281,6 @@ class TerragruntGenerator(object):
             prefixlen_diff=(self.netmask - self.cidr_netmask)))
         self.subnets = self.possible_subnets[0:(self.num_subnets * self.num_azs)]
 
-
     def ask_networking(self):
         # TODO: Get rid of this?
         self.num_vpcs = self.choice_question('How many vpcs?', [1, 2, 3, 4])
@@ -281,7 +295,7 @@ class TerragruntGenerator(object):
         # TODO:
         if self.use_common_modules == 'y' and not self.already_forked:
             self.forked_repo = self.choice_question('Do you have a private fork? \n '
-                                                    '(I\'d fork it if you want to customize it ..)', ['n', 'y'])
+                                                    '(I\'d fork it if you want to customize it .)', ['n', 'y'])
 
     def module_ask_git_user(self):
         # TODO:
@@ -369,6 +383,7 @@ class TerragruntGenerator(object):
 
     def ask_all(self):
         for r in range(self.num_regions):
+            print(os.listdir(os.curdir))
             self.get_stack_env()
             self.r = r
             self.ask_region()

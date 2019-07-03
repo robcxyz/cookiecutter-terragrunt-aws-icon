@@ -1,3 +1,4 @@
+
 ## cookiecutter-terragrunt-aws-icon
 
 Cookiecutter template to build a [terragrunt](https://github.com/gruntwork-io/terragrunt) 
@@ -25,7 +26,7 @@ This is part a larger project on cookiecutter. Please pm [me](https://github.com
 
 This package depends on these requirements 
 ```
-pip install pyhcl boto3 cookiecutter prompt_toolkit
+pip install pyhcl boto3 cookiecutter requests prompt_toolkit
 ```
 
 You will also need the appropriate terraform and terragrunt packages. 
