@@ -198,7 +198,7 @@ class TerragruntGenerator(object):
     @staticmethod
     def simple_question(question, default=None):
         prompt = '%s:' % (question)
-        if not default:
+        if default:
             # prompt = f'{question}-\n[{default}]:'
             prompt = '%s-\n%s:' % (question, default.encode("utf-8"))
         try:
@@ -346,7 +346,6 @@ class TerragruntGenerator(object):
                 self.stack[self.r]['modules'].update(parsed_stack['modules'])
                 self.stack[self.r]['region_inputs'].update(parsed_stack['region_inputs'])
                 self.stack['env_inputs'].update(parsed_stack['env_inputs'])
-                print('here')
             except:
                 err_msg = 'Could not read common modules, invalid format'
                 print(err_msg)
@@ -372,7 +371,6 @@ class TerragruntGenerator(object):
                 self.stack[self.r]['modules'].update(parsed_stack['modules'])
                 self.stack[self.r]['region_inputs'].update(parsed_stack['region_inputs'])
                 self.stack['env_inputs'].update(parsed_stack['env_inputs'])
-                print('here')
             except:
                 err_msg = 'Could not read stack modules, invalid format'
                 print(err_msg)
