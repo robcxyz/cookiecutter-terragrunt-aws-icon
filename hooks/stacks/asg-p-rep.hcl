@@ -31,9 +31,9 @@ dns {
   }
 }
 
-ec2 {
+asg {
   type = "module"
-  source = "github.com/robcxyz/terragrunt-root-modules.git/aws/compute//ec2"
+  source = "github.com/robcxyz/terragrunt-root-modules.git/aws/compute//asg"
   dependencies = [
     "vpc",
     "ebs",
@@ -50,6 +50,27 @@ ec2 {
     efs_directory = "/opt/data"
   }
 }
+
+alb {
+  type = "module"
+  source = "github.com/robcxyz/terragrunt-root-modules.git/aws/compute//alb"
+  dependencies = [
+    "vpc",
+    "ebs",
+    "efs",
+    "security_groups",
+    "keys"
+  ]
+  inputs {
+    resource_group = "ec2"
+    instance_type = "m4.large"
+    root_volume_size = 20
+    volume_path = "/dev/sdf"
+    volume_dir = ""
+    efs_directory = "/opt/data"
+  }
+}
+
 
 ebs {
   type = "module"

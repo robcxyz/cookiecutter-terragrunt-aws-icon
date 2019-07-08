@@ -413,7 +413,6 @@ class TerragruntGenerator(object):
 
     def ask_all(self):
         for r in range(self.num_regions):
-            print(os.listdir(os.curdir))
             self.get_stack_env()
             self.r = r
             self.ask_region()

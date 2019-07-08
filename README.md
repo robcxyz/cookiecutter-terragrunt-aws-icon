@@ -88,6 +88,9 @@ terragrunt apply-all --terragrunt-source-update
 
 ### TTD 
 
+This is going to be rebuilt in the near future to incorporate the learnings from this first go. 
+Most of this stuff is really going to be done on the next iteration. 
+
 #### Bugs 
 - Fix output of network 
     - Rebuild network 
@@ -105,7 +108,7 @@ terragrunt apply-all --terragrunt-source-update
 - Once headless is working, render copy of pre_gen_hook in main ouptut dir as well as output of config 
 - Once questions have been asked, the project can be re-built based on updating one 
 generated config file from running copy of pre_gen_hook
-- No region questions unless spefically needed 
+- No region questions unless specifically needed 
 
 #### Headless Service 
 
