@@ -200,7 +200,7 @@ class TerragruntGenerator(object):
         prompt = '%s:' % (question)
         if not default:
             # prompt = f'{question}-\n[{default}]:'
-            prompt = '%s-\n[%s]:' % (question, default)
+            prompt = '%s-\n%s:' % (question, default.encode("utf-8"))
         try:
             user_entry = input(prompt)
         except SyntaxError:
@@ -217,7 +217,7 @@ class TerragruntGenerator(object):
         if not isinstance(defaults, list):
             raise ValueError("Default is not a list")
         choices = frozenset(defaults)
-        input_question = '%s-\n[%s]:' % (question, defaults)
+        input_question = '%s-\n%s:' % (question, [str(r) for r in defaults])
 
         tries = 0
         try:
@@ -374,7 +374,7 @@ class TerragruntGenerator(object):
                 self.stack['env_inputs'].update(parsed_stack['env_inputs'])
                 print('here')
             except:
-                err_msg = 'Could not read common modules, invalid format'
+                err_msg = 'Could not read stack modules, invalid format'
                 print(err_msg)
                 raise ValueError(err_msg)
 
