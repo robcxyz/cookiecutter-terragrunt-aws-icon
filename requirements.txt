@@ -2,3 +2,4 @@ pyhcl
 boto3
 cookiecutter
 prompt_toolkit
+jinja2

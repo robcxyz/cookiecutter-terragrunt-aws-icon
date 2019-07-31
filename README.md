@@ -1,4 +1,11 @@
 
+STATUS UPDATE:  This project is going to be split up soon such that the logic that builds the file structure is going 
+to be separated from the repo templating logic.  This repo will no longer be maintained with the new project calling 
+a more general purpose CLI tool possibly written in Go.  Any feedback would be well appreciated as I plan on submitting 
+all this work to Gruntworks as a general purpose scaffolding tool.  Would love thoughts on the templating logic so please 
+DM me if you would like to collab. 
+
+
 ## cookiecutter-terragrunt-aws-icon
 
 Cookiecutter template to build a [terragrunt](https://github.com/gruntwork-io/terragrunt) 
@@ -11,7 +18,7 @@ Terragrunt is [awesome](https://blog.gruntwork.io/a-comprehensive-guide-to-terra
  [many](https://blog.gruntwork.io/) [reasons](). Most importantly it allows you to keep your code DRY, 
  as in Don't Repeat Yourself, as in when you change variables, you only change them in one place. 
  There are a lot of ways to structure terraform files, but so far I think 
- [this way](https://github.com/antonbabenko/terragrunt-reference-architecture). 
+ [this way](https://github.com/antonbabenko/terragrunt-reference-architecture) is best. 
  As long as you conform to a structure of `environment` / `region` / `rescource group` in your 
  config files as well as how you **refer to the remote state** within the modules, you will have
  a consistent way to reference any object, even if it is within another account. 

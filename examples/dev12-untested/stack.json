@@ -1,1 +1,120 @@
-{"0": {"files": {}, "region_inputs": {"cidr": "10.0.0.0/16", "azs": ["us-east-1a", "us-east-1b", "us-east-1c"], "private_subnets": ["10.10.0.0/20", "10.10.16.0/20", "10.10.32.0/20"], "public_subnets": ["10.10.64.0/20", "10.10.80.0/20", "10.10.96.0/20"]}, "region": "us-east-1", "modules": {"iam-terraform": {"source": "github.com/robcxyz/terragrunt-root-modules.git/aws/init//iam-terraform", "is_service": true, "inputs": {"name": "TerraformIAM"}}, "logging": {"source": "github.com/robcxyz/terragrunt-root-modules.git/aws/logging//logs", "is_service": true, "inputs": {"lb_logs_path": "lb-logs", "name": "logs", "s3_logs_path": "s3-logs", "resource_group": "logs"}}, "dns": {"source": "github.com/robcxyz/terragrunt-root-modules.git/aws/networking//dns", "is_service": true, "inputs": {}}, "keys": {"source": "github.com/robcxyz/terragrunt-root-modules.git/aws/common//keys", "is_service": true, "inputs": {"name": "keys"}}, "ec2": {"source": "github.com/robcxyz/terragrunt-root-modules.git/aws/compute//ec2", "dependencies": ["vpc", "ebs", "efs", "security_groups", "keys"], "is_service": true, "inputs": {"efs_directory": "/opt/data", "resource_group": "ec2", "volume_dir": "", "root_volume_size": 20, "instance_type": "m4.large", "volume_path": "/dev/sdf"}}, "vpc": {"source": "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v1.59.0", "is_service": true, "inputs": {"enable_nat_gateway": "false", "single_nat_gateway": "false", "name": "vpc-dev", "enable_dns_hostnames": "true", "enable_dns_support": "true"}}, "ebs": {"source": "github.com/robcxyz/terragrunt-root-modules.git/aws/storage//ebs", "is_service": true, "inputs": {"volume_path": "/dev/sdf", "resource_group": "dns"}}, "iam-user": {"source": "github.com/robcxyz/terragrunt-root-modules.git/aws/init//iam-user", "is_service": true, "inputs": {"name": "UserIAM"}}, "security_groups": {"source": "github.com/robcxyz/terragrunt-root-modules.git/aws/common//security_groups", "dependencies": ["vpc"], "is_service": true, "inputs": {"resource_group": "security_groups"}}}}, "env_inputs": {"org_subdomain": "insight", "root_domain_name": "solidwallet.io", "log_bucket_region": "us-east-1", "log_location_prefix": "logs", "tracker_subdomain": "tracker", "icon_domain_name": "solidwallet.io", "node_subdomain": "net", "log_bucket": ""}}
+{
+  "0": {
+    "files": {},
+    "region_inputs": {
+      "cidr": "10.0.0.0/16",
+      "azs": [
+        "us-east-1a",
+        "us-east-1b",
+        "us-east-1c"
+      ],
+      "private_subnets": [
+        "10.10.0.0/20",
+        "10.10.16.0/20",
+        "10.10.32.0/20"
+      ],
+      "public_subnets": [
+        "10.10.64.0/20",
+        "10.10.80.0/20",
+        "10.10.96.0/20"
+      ]
+    },
+    "region": "us-east-1",
+    "modules": {
+      "iam-terraform": {
+        "source": "github.com/robcxyz/terragrunt-root-modules.git/aws/init//iam-terraform",
+        "is_service": true,
+        "inputs": {
+          "name": "TerraformIAM"
+        }
+      },
+      "logging": {
+        "source": "github.com/robcxyz/terragrunt-root-modules.git/aws/logging//logs",
+        "is_service": true,
+        "inputs": {
+          "lb_logs_path": "lb-logs",
+          "name": "logs",
+          "s3_logs_path": "s3-logs",
+          "resource_group": "logs"
+        }
+      },
+      "dns": {
+        "source": "github.com/robcxyz/terragrunt-root-modules.git/aws/networking//dns",
+        "is_service": true,
+        "inputs": {}
+      },
+      "keys": {
+        "source": "github.com/robcxyz/terragrunt-root-modules.git/aws/common//keys",
+        "is_service": true,
+        "inputs": {
+          "name": "keys"
+        }
+      },
+      "ec2": {
+        "source": "github.com/robcxyz/terragrunt-root-modules.git/aws/compute//ec2",
+        "dependencies": [
+          "vpc",
+          "ebs",
+          "efs",
+          "security_groups",
+          "keys"
+        ],
+        "is_service": true,
+        "inputs": {
+          "efs_directory": "/opt/data",
+          "resource_group": "ec2",
+          "volume_dir": "",
+          "root_volume_size": 20,
+          "instance_type": "m4.large",
+          "volume_path": "/dev/sdf"
+        }
+      },
+      "vpc": {
+        "source": "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v1.59.0",
+        "is_service": true,
+        "inputs": {
+          "enable_nat_gateway": "false",
+          "single_nat_gateway": "false",
+          "name": "vpc-dev",
+          "enable_dns_hostnames": "true",
+          "enable_dns_support": "true"
+        }
+      },
+      "ebs": {
+        "source": "github.com/robcxyz/terragrunt-root-modules.git/aws/storage//ebs",
+        "is_service": true,
+        "inputs": {
+          "volume_path": "/dev/sdf",
+          "resource_group": "dns"
+        }
+      },
+      "iam-user": {
+        "source": "github.com/robcxyz/terragrunt-root-modules.git/aws/init//iam-user",
+        "is_service": true,
+        "inputs": {
+          "name": "UserIAM"
+        }
+      },
+      "security_groups": {
+        "source": "github.com/robcxyz/terragrunt-root-modules.git/aws/common//security_groups",
+        "dependencies": [
+          "vpc"
+        ],
+        "is_service": true,
+        "inputs": {
+          "resource_group": "security_groups"
+        }
+      }
+    }
+  },
+  "env_inputs": {
+    "org_subdomain": "insight",
+    "root_domain_name": "solidwallet.io",
+    "log_bucket_region": "us-east-1",
+    "log_location_prefix": "logs",
+    "tracker_subdomain": "tracker",
+    "icon_domain_name": "solidwallet.io",
+    "node_subdomain": "net",
+    "log_bucket": ""
+  }
+}
